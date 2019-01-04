@@ -1,4 +1,7 @@
+# coding:utf-8
+
 from abc import ABCMeta, abstractmethod
+import os
 
 class MangaCrawler:
     __metaclass__ = ABCMeta
@@ -8,5 +11,21 @@ class MangaCrawler:
 
 
     @abstractmethod
-    def download(self):
+    def done(self):
         pass
+
+    @abstractmethod
+    def download(self, data):
+        pass
+
+    @abstractmethod
+    def info(self):
+        pass
+
+    @staticmethod
+    def mk_episode_dir(save_dir, title, episode_title):
+        episode_dir = os.path.join(save_dir, title, episode_title)
+        if os.path.exists(os.path.normpath(episode_dir)):
+            return None
+        os.makedirs(os.path.normpath(episode_dir))
+        return episode_dir

@@ -2,6 +2,7 @@
 /__pycache__
 /dist
 /build
+/.idea
 .DS_Store
 .gitignore
 *.spec
