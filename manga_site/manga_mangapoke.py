@@ -20,9 +20,10 @@ adapter = HTTPAdapter(max_retries=retry)
 session.mount('http://', adapter)
 session.mount('https://', adapter)
 
+
 class MangaPoke(MangaCrawler):
 
-    xpaths = {
+    xpath = {
         'title': '//*[@class="series-header-title"]/text()',
         'episode_new_open': '//*[@id="page-viewer"]/section[3]/div[2]/div[1]/div/ul[1]/li/a',
         'episode_old_open': '//*[@id="page-viewer"]/section[3]/div[2]/div[1]/ul/li/a',
@@ -43,55 +44,14 @@ class MangaPoke(MangaCrawler):
         self.cur_episode_id = re.search("\\d*$", self.url).group(0)
         self.task_pool = None
 
-    # def get_manga_index(self, url):
-    #     page = session.get(url, headers=self.headers)
-    #     page.encoding = 'utf-8'
-    #
-    #     html = etree.HTML(page.text)
-    #
-    #     title = ''.join(html.xpath(self.xpaths['title']))
-    #     episode_new_open = html.xpath(self.xpaths['episode_new_open'])
-    #     episode_old_open = html.xpath(self.xpaths['episode_old_open'])
-    #     episode_open = episode_new_open + episode_old_open
-    #
-    #     episode_more_url = ''.join(html.xpath(self.xpaths['episode_more_url']))
-    #     if len(episode_more_url) != 0:
-    #         r_more = session.get(episode_more_url, headers=self.headers)
-    #         more_data = json.loads(r_more.text)
-    #         more_html = etree.HTML(more_data['html'])
-    #         episode_more_open = more_html.xpath(self.xpaths['episode_more_open'])
-    #         episode_open = episode_open + episode_more_open
-    #
-    #     episodes = list()
-    #
-    #     for episode in episode_open:
-    #         open_status = ''.join(episode.xpath('div[2]/span[2]/@class'))
-    #         if 'private' not in open_status:
-    #             episodes.append(''.join(episode.xpath('@href')))
-    #
-    #     cur_episode_title = ''.join(html.xpath(self.xpaths['cur_episode']['title']))
-    #     cur_episode_images = html.xpath(self.xpaths['cur_episode']['images'])
-    #
-    #     return {
-    #         'title': title,
-    #         'episodes': episodes,
-    #         'cur_episode': {
-    #             'title': cur_episode_title,
-    #             'images': cur_episode_images
-    #         }
-    #     }
-
     def get_manga_info(self, url):
         page = session.get(url, headers=self.headers)
         page.encoding = 'utf-8'
 
         html = etree.HTML(page.text)
-        # manga_title = ''.join(html.xpath(self.xpaths['title']))
-        # cur_episode_title = ''.join(html.xpath(self.xpaths['cur_episode']['title']))
-
         return {
-            "title": ''.join(html.xpath(self.xpaths['title'])),
-            "episodes": self.get_episodes(''.join(html.xpath(self.xpaths['cur_episode']['title'])))
+            "title": ''.join(html.xpath(self.xpath['title'])),
+            "episodes": self.get_episodes(''.join(html.xpath(self.xpath['cur_episode']['title'])))
         }
 
     def get_episodes(self, cur_episode_title):
@@ -129,13 +89,8 @@ class MangaPoke(MangaCrawler):
         page.encoding = 'utf-8'
 
         html = etree.HTML(page.text)
-        # cur_episode_title = ''.join(html.xpath(self.xpaths['cur_episode']['title']))
-        cur_episode_images = html.xpath(self.xpaths['cur_episode']['images'])
+        cur_episode_images = html.xpath(self.xpath['cur_episode']['images'])
 
-        # return {
-        #     'title': cur_episode_title,
-        #     'images': cur_episode_images
-        # }
         return cur_episode_images
 
     def download_image(self, url, save_name):

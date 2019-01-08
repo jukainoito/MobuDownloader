@@ -3,6 +3,7 @@
 from abc import ABCMeta, abstractmethod
 import os
 
+
 class MangaCrawler:
     __metaclass__ = ABCMeta
 

@@ -4,7 +4,6 @@ import sys
 from PyQt5.QtWidgets import (QWidget, QApplication, QPushButton, QLineEdit, QLabel,
                              QAbstractItemView, QTableView, QMessageBox)
 from PyQt5.QtCore import (Qt, QThread, pyqtSignal)
-from PyQt5.QtGui import (QStandardItemModel, QStandardItem)
 from widgets import *
 from manga_site import *
 
@@ -20,8 +19,13 @@ class InfoWorker(QThread):
         self.downloadObj = downloadObj
 
     def run(self):
-        data = self.downloadObj.info()
-        self.finSignal.emit(data)
+        try:
+            data = self.downloadObj.info()
+            self.finSignal.emit(data)
+        except Exception as e:
+            self.finSignal.emit({
+                "error": 1
+            })
 
 
 class DownloadWorker(QThread):
@@ -48,7 +52,7 @@ class App(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.title = "mobu tool v0.03 - only support mangapoke and ComicWalker"
+        self.title = "mobu tool v0.04"
         self.left = 100
         self.top = 100
         self.width = 500
@@ -132,8 +136,8 @@ class App(QWidget):
         site = self.get_site(url)
 
         if site in sites.keys():
-            siteClass = sites[site]
-            self.downloadObj = siteClass(url)
+            site_class = sites[site]
+            self.downloadObj = site_class(url)
             # self.raw_data = self.downloadObj.info()
             # self.set_info(self.downloadObj.info())
             self.info_worker = InfoWorker(downloadObj=self.downloadObj)
@@ -162,6 +166,10 @@ class App(QWidget):
         self.download_btn.setEnabled(True)
 
     def set_info(self, manga_data):
+        if "error" in manga_data.keys():
+            QMessageBox.warning(self, "Warning", "无法获取漫画数据!", QMessageBox.Ok)
+            self.get_info_end()
+            return
         self.raw_data = manga_data
         self.set_title(manga_data["title"])
         self.data.clear()

@@ -127,7 +127,6 @@ class MangaWalker(MangaCrawler):
 
         return image_array
 
-
     def get_download_episode(self, data):
         down_episodes = []
         for episode in data['episodes']:
