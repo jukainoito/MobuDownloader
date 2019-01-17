@@ -5,4 +5,4 @@ Only free episode
 * [コミックウォーカー](https://comic-walker.com/)
 * [webエース](https://web-ace.jp/)
 * [サイコミ](https://cycomi.com/)
-* [コミック　アース・スター](https://comic-earthstar.jp/) `defect`
+* [コミック　アース・スター](https://comic-earthstar.jp/)
