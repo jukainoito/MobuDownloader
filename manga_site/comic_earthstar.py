@@ -14,6 +14,7 @@ from requests.packages.urllib3.util.retry import Retry
 
 from urllib import parse
 
+from io import BytesIO as Bytes2Data
 
 session = requests.Session()
 retry = Retry(connect=3, backoff_factor=0.5)
@@ -135,13 +136,11 @@ class ComicEarthStat(MangaCrawler):
 
     def download_image_data(self, url, save_path, a3f_data):
         r = session.get(url)
-        with open(save_path, "wb") as file:
-            file.write(r.content)
-            self.handle_image(save_path, a3f_data)
+        self.handle_image(r.content, save_path, a3f_data)
 
     @staticmethod
-    def handle_image(save_path, a3f_data):
-        im = Image.open(save_path)
+    def handle_image(img_data, save_path, a3f_data):
+        im = Image.open(Bytes2Data(img_data))
         new_im = im.copy()
         for data in a3f_data:
             image_area = im.crop((data['destX'], data['destY'],
@@ -169,12 +168,14 @@ class ComicEarthStat(MangaCrawler):
         no = image_data['extend']['FileLinkInfo']['PageLinkInfoList'][0]['Page']['No']
         no = str(no)
         image_url = episode_storage_url + image_data['original-file-path'] + '/' + no + '.jpeg'
-        content_area = image_data['extend']['FileLinkInfo']['PageLinkInfoList'][0]['Page']['ContentArea']
-        width = content_area['Width']
-        height = content_area['Height']
+        page_data = image_data['extend']['FileLinkInfo']['PageLinkInfoList'][0]['Page']
+        content_area = page_data['ContentArea']
+        width = content_area['Width'] + page_data['DummyWidth']
+        height = content_area['Height'] + page_data['DummyHeight']
         pattern = self.gen_pattern(image_data['original-file-path'] + '/' + no)
 
         a3f_data = self.gen_a3f(width, height, pattern)
+
         self.download_image_data(image_url, save_path, a3f_data)
 
     def download(self, data):

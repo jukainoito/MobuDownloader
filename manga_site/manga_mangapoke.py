@@ -13,6 +13,8 @@ import re
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
+from io import BytesIO as Bytes2Data
+
 
 session = requests.Session()
 retry = Retry(connect=3, backoff_factor=0.5)
@@ -95,14 +97,12 @@ class MangaPoke(MangaCrawler):
 
     def download_image(self, url, save_name):
         r = session.get(url)
-        with open(save_name, "wb") as file:
-            file.write(r.content)
-            self.handle_image(save_name)
+        self.handle_image(r.content, save_name)
         # print(save_name)
 
     @staticmethod
-    def handle_image(save_name):
-        im = Image.open(save_name)
+    def handle_image(img_data, save_name):
+        im = Image.open(Bytes2Data(img_data))
         ims = list()
         w_step = int(im.width / 4)
         h_step = int(im.height / 4)
