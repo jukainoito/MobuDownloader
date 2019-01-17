@@ -52,7 +52,7 @@ class App(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.title = "mobu tool v0.04"
+        self.title = "mobu tool v0.04a"
         self.left = 100
         self.top = 100
         self.width = 500
