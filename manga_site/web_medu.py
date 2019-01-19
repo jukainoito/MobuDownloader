@@ -26,6 +26,7 @@ class WebMedu(MangaCrawler):
         'episodes': '//*[@class="episode"]/li/a',
         'episode_url': '@href',
         'episode_title': 'text()',
+        'cur_manga_title': '//*[@name="keywords"]/@content',
         'cur_episode_title': '//*[@property="og:title"]/@content',
         'episode_image_url': '//*[@class="swiper-slide"]/img/@src'
     }
@@ -41,7 +42,8 @@ class WebMedu(MangaCrawler):
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
 
-        title = ''.join(html.xpath(self.xpath['title']))
+        title = ''.join(html.xpath(self.xpath['cur_manga_title']))
+        title = title.split(',')[0]
 
         episode_title = ''.join(html.xpath(self.xpath['cur_episode_title']))
 
