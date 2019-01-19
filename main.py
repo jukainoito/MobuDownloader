@@ -9,7 +9,7 @@ from manga_site import *
 
 from urllib.parse import urlparse
 import time
-
+import traceback
 
 class InfoWorker(QThread):
     finSignal = pyqtSignal(dict)
@@ -23,6 +23,7 @@ class InfoWorker(QThread):
             data = self.downloadObj.info()
             self.finSignal.emit(data)
         except Exception as e:
+            traceback.print_exc()
             self.finSignal.emit({
                 "error": 1
             })
@@ -52,7 +53,7 @@ class App(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.title = "mobu tool v0.04a"
+        self.title = "mobu tool v0.05"
         self.left = 100
         self.top = 100
         self.width = 500
