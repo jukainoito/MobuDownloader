@@ -1,7 +1,6 @@
 # coding:utf-8
 
 from .manga_crawler import MangaCrawler
-import requests
 import re
 import os
 from lxml import etree
@@ -10,16 +9,6 @@ from urllib.parse import urljoin
 from PIL import Image
 
 from io import BytesIO as Bytes2Data
-
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
-
-
-session = requests.Session()
-retry = Retry(connect=3, backoff_factor=0.5)
-adapter = HTTPAdapter(max_retries=retry)
-session.mount('http://', adapter)
-session.mount('https://', adapter)
 
 
 class HutabashaWeblish(MangaCrawler):
@@ -112,7 +101,7 @@ class HutabashaWeblish(MangaCrawler):
         return _rt
 
     def get_episode_info(self, url):
-        r = session.get(url, headers=self.headers)
+        r = self.session.get(url, headers=self.headers)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
         decode_key = ''.join(html.xpath(self.xpath['decode_key']))
@@ -120,7 +109,7 @@ class HutabashaWeblish(MangaCrawler):
         web_key = ''.join(html.xpath(self.xpath['web_key']))
 
         init_url = urljoin(url, 'InitVal.html')
-        ir = session.get(init_url, headers=self.headers)
+        ir = self.session.get(init_url, headers=self.headers)
         ir.encoding = 'utf-8'
         init_html = etree.HTML(ir.text)
         init_data = ''.join(init_html.xpath(self.xpath['init_data']))
@@ -204,7 +193,7 @@ class HutabashaWeblish(MangaCrawler):
         return None
 
     def get_episode_images(self, url):
-        r = session.get(url, headers=self.headers)
+        r = self.session.get(url, headers=self.headers)
         html = etree.HTML(r.text)
         images = (html.xpath(self.xpath['episode_image_url']))
         title = ''.join(html.xpath(self.xpath['cur_episode_title']))
@@ -243,7 +232,7 @@ class HutabashaWeblish(MangaCrawler):
             while True:
                 tmp = self.getIpntStr(page, 6, episode_data['image_key'], x, y)
                 part_image_url = image_url + '_06' + tmp + '.jpg'
-                image_resp = session.get(part_image_url, headers=self.headers)
+                image_resp = self.session.get(part_image_url, headers=self.headers)
                 if image_resp.status_code == 404:
                     break
                 else:

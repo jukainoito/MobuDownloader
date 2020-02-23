@@ -1,26 +1,14 @@
 # coding:utf-8
 
 from .manga_crawler import MangaCrawler
-import requests
 from lxml import etree
 from PIL import Image
-import json
 import os
 import threadpool
 import re
 
-
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
-
 from io import BytesIO as Bytes2Data
 
-
-session = requests.Session()
-retry = Retry(connect=3, backoff_factor=0.5)
-adapter = HTTPAdapter(max_retries=retry)
-session.mount('http://', adapter)
-session.mount('https://', adapter)
 
 
 class MangaPoke(MangaCrawler):
@@ -47,7 +35,7 @@ class MangaPoke(MangaCrawler):
         self.task_pool = None
 
     def get_manga_info(self, url):
-        page = session.get(url, headers=self.headers)
+        page = self.session.get(url, headers=self.headers)
         page.encoding = 'utf-8'
 
         html = etree.HTML(page.text)
@@ -65,7 +53,7 @@ class MangaPoke(MangaCrawler):
             "read_more_num": 250,
             "type": "episode"
         }
-        r = session.get(self.EPISODES_URL, params=params)
+        r = self.session.get(self.EPISODES_URL, params=params)
         html = r.json()["html"]
         html = etree.HTML(html)
         free_episodes = html.xpath('//*[@class="test-readable-product-is-free series-episode-list-is-free"]/../..')
@@ -87,7 +75,7 @@ class MangaPoke(MangaCrawler):
         return episodes
 
     def get_episode_images(self, url):
-        page = session.get(url, headers=self.headers)
+        page = self.session.get(url, headers=self.headers)
         page.encoding = 'utf-8'
 
         html = etree.HTML(page.text)
@@ -96,7 +84,7 @@ class MangaPoke(MangaCrawler):
         return cur_episode_images
 
     def download_image(self, url, save_name):
-        r = session.get(url)
+        r = self.session.get(url)
         self.handle_image(r.content, save_name)
         # print(save_name)
 

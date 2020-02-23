@@ -1,21 +1,10 @@
 # coding:utf-8
 
 from .manga_crawler import MangaCrawler
-import requests
 import re
 import os
 from lxml import etree
 import threadpool
-
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
-
-
-session = requests.Session()
-retry = Retry(connect=3, backoff_factor=0.5)
-adapter = HTTPAdapter(max_retries=retry)
-session.mount('http://', adapter)
-session.mount('https://', adapter)
 
 
 class WebAce(MangaCrawler):
@@ -36,7 +25,7 @@ class WebAce(MangaCrawler):
         self.task_pool = None
 
     def get_episode_info(self, url):
-        r = session.get(url, headers=self.headers)
+        r = self.session.get(url, headers=self.headers)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
 
@@ -62,7 +51,7 @@ class WebAce(MangaCrawler):
     def get_manga_info(self, url):
         if re.search("episode/+$", url) is None:
             url = url + '/episode/'
-        r = session.get(url, headers=self.headers)
+        r = self.session.get(url, headers=self.headers)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
 
@@ -89,7 +78,7 @@ class WebAce(MangaCrawler):
 
     def get_episode_images(self, url):
         url = url + '/json/'
-        r = session.get(url, headers=self.headers)
+        r = self.session.get(url, headers=self.headers)
         images = r.json()
 
         return list(map(lambda img: self.domain_url + img, images))
@@ -117,7 +106,7 @@ class WebAce(MangaCrawler):
 
     def download_image(self, image_url, save_name):
 
-        image = session.get(image_url, headers=self.headers)
+        image = self.session.get(image_url, headers=self.headers)
         self.save_image(save_name, image.content)
 
     def download(self, data):

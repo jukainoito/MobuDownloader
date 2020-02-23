@@ -1,7 +1,6 @@
 # coding:utf-8
 
 from .manga_crawler import MangaCrawler
-import requests
 import re
 import os
 from lxml import etree
@@ -9,18 +8,11 @@ import threadpool
 import math
 from PIL import Image
 
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
 
 from urllib import parse
 
 from io import BytesIO as Bytes2Data
 
-session = requests.Session()
-retry = Retry(connect=3, backoff_factor=0.5)
-adapter = HTTPAdapter(max_retries=retry)
-session.mount('http://', adapter)
-session.mount('https://', adapter)
 
 
 class ComicEarthStat(MangaCrawler):
@@ -48,7 +40,7 @@ class ComicEarthStat(MangaCrawler):
             return None
         cid = cid[0]
         info_api_url = self.episode_info_api_url + '?cid='+cid
-        r = session.get(info_api_url, headers=self.headers)
+        r = self.session.get(info_api_url, headers=self.headers)
         episode_info = r.json()
 
         return episode_info
@@ -67,7 +59,7 @@ class ComicEarthStat(MangaCrawler):
         return self.get_manga_info(manga_url, now_episode_title)
 
     def get_manga_info(self, url, now_episode_title=None):
-        r = session.get(url, headers=self.headers)
+        r = self.session.get(url, headers=self.headers)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
 
@@ -127,7 +119,7 @@ class ComicEarthStat(MangaCrawler):
     def get_episode_images(self, url):
         episode_storage_info = self.get_episode_storage_info(url)
         images_api_url = episode_storage_info['url'] + 'configuration_pack.json'
-        r = session.get(images_api_url, headers=self.headers)
+        r = self.session.get(images_api_url, headers=self.headers)
         image_data = r.json()
         return {
             "episode_storage_url": episode_storage_info['url'],
@@ -135,7 +127,7 @@ class ComicEarthStat(MangaCrawler):
         }
 
     def download_image_data(self, url, save_path, a3f_data):
-        r = session.get(url)
+        r = self.session.get(url)
         self.handle_image(r.content, save_path, a3f_data)
 
     @staticmethod

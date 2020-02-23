@@ -1,21 +1,10 @@
 # coding:utf-8
 
 from .manga_crawler import MangaCrawler
-import requests
 import re
 import os
 from lxml import etree
 import threadpool
-
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
-
-
-session = requests.Session()
-retry = Retry(connect=3, backoff_factor=0.5)
-adapter = HTTPAdapter(max_retries=retry)
-session.mount('http://', adapter)
-session.mount('https://', adapter)
 
 
 class WebMedu(MangaCrawler):
@@ -38,7 +27,7 @@ class WebMedu(MangaCrawler):
         self.task_pool = None
 
     def get_episode_info(self, url):
-        r = session.get(url, headers=self.headers)
+        r = self.session.get(url, headers=self.headers)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
 
@@ -62,7 +51,7 @@ class WebMedu(MangaCrawler):
         }
 
     def get_manga_info(self, url):
-        r = session.get(url, headers=self.headers)
+        r = self.session.get(url, headers=self.headers)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
 
@@ -85,7 +74,7 @@ class WebMedu(MangaCrawler):
         }
 
     def get_episode_images(self, url):
-        r = session.get(url, headers=self.headers)
+        r = self.session.get(url, headers=self.headers)
         html = etree.HTML(r.text)
         images = (html.xpath(self.xpath['episode_image_url']))
         title = ''.join(html.xpath(self.xpath['cur_episode_title']))
@@ -116,7 +105,7 @@ class WebMedu(MangaCrawler):
 
     def download_image(self, image_url, save_name):
 
-        image = session.get(image_url, headers=self.headers)
+        image = self.session.get(image_url, headers=self.headers)
         self.save_image(save_name, image.content)
 
     def download(self, data):

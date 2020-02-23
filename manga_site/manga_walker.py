@@ -4,23 +4,12 @@ from .manga_crawler import MangaCrawler
 # from urllib.parse import urlparse
 # from urllib.parse import parse_qs
 from string import Template
-import requests
 import re
 import json
 import six
 import os
 from lxml import etree
 import threadpool
-
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
-
-
-session = requests.Session()
-retry = Retry(connect=3, backoff_factor=0.5)
-adapter = HTTPAdapter(max_retries=retry)
-session.mount('http://', adapter)
-session.mount('https://', adapter)
 
 
 class MangaWalker(MangaCrawler):
@@ -41,7 +30,7 @@ class MangaWalker(MangaCrawler):
         self.task_pool = None
 
     def get_episode_info(self, url):
-        r = session.get(url, headers=self.headers)
+        r = self.session.get(url, headers=self.headers)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
         script_str = ''.join(html.xpath('/html/head/script[1]/text()'))
@@ -59,7 +48,7 @@ class MangaWalker(MangaCrawler):
         }
 
     def get_manga_info(self, url):
-        r = session.get(url, headers=self.headers)
+        r = self.session.get(url, headers=self.headers)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
 
@@ -89,7 +78,7 @@ class MangaWalker(MangaCrawler):
         # query_params = parse_qs(urlparse(url).query)
         # cid = ''.join(query_params['cid'])
         api_url = self.api_url_temp.substitute(cid=cid)
-        r = session.get(api_url, headers=self.headers)
+        r = self.session.get(api_url, headers=self.headers)
         api_data = json.loads(r.text)
         if api_data['meta']['status'] == 200:
             return api_data['data']['result']
@@ -111,7 +100,7 @@ class MangaWalker(MangaCrawler):
     def download_image(self, image_info, episode_dir):
         image_key = self.gen_key(image_info['meta']['drm_hash'])
 
-        image_data = session.get(image_info['meta']['source_url'], headers=self.headers)
+        image_data = self.session.get(image_info['meta']['source_url'], headers=self.headers)
 
         key = bytearray(image_key)
         data = bytearray(image_data.content)
