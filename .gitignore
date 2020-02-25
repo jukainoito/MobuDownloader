@@ -1,5 +1,5 @@
 /.git
-/__pycache__
+__pycache__
 /dist
 /build
 /.idea
@@ -7,3 +7,5 @@
 .gitignore
 *.spec
 *.pyc
+run.log
+/download
