@@ -52,7 +52,7 @@ class MangaPoke(MangaCrawler):
         return re.search("\\d*$", url).group(0)
 
     def getEpisodes(self, url, curEpisode=None):
-        logger.info('Start get manga episdes from: {}'.format(url))
+        logger.info('Start get manga episodes from: {}'.format(url))
         episodes = []
         params = {
             "current_readable_product_id": self.getEpisodeId(url),

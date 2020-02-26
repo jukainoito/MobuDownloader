@@ -26,7 +26,7 @@ class MangaWalker(MangaCrawler):
     }
 
     def getEpisodeInfo(self, url):
-        logger.info('Start get manga episde info from: {}'.format(url))
+        logger.info('Start get manga episode info from: {}'.format(url))
         r = self.session.get(url, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)

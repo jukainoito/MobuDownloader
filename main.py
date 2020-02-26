@@ -12,10 +12,10 @@ from manga import sites, MangaDownloader
 
 parser = argparse.ArgumentParser()
 parser.add_argument('urls', nargs='+',  help='input download url')
-parser.add_argument("-g", "-gui", "--gui", help="Use gui", action="store_true")
 parser.add_argument("-c", "-config", "--config", help="YAML config file", action="store")
 parser.add_argument("-d", "-dir", "--dir", help="download file save to directory path", action="store")
-parser.add_argument("-a", "-all", "--all", help="download all episodes", action="store_true")
+# parser.add_argument("-g", "-gui", "--gui", help="Use gui", action="store_true")
+# parser.add_argument("-a", "-all", "--all", help="download all episodes", action="store_true")
 args = parser.parse_args()
 
 
@@ -23,10 +23,15 @@ PROGRAM_DIR_PATH = os.path.dirname(os.path.abspath(sys.argv[0]))
 DEFAULT_LOG_PATH = os.path.join(PROGRAM_DIR_PATH, 'run.log')
 DEFAULT_DOWNLOAD_DIR_PATH = os.path.join(PROGRAM_DIR_PATH, 'download')
 
-IS_GUI = args.gui
-if IS_GUI:
-    print('WARRING: now unsupport gui')
-    IS_GUI = False
+# IS_ALL = args.all
+# IS_GUI = args.gui
+# if IS_GUI:
+#     print('WARRING: now unsupport gui')
+#     IS_GUI = False
+
+IS_ALL = True
+IS_GUI = False
+
 
 YAML_CONFIG_PATH = None
 if args.config is not None:
@@ -86,15 +91,16 @@ def main():
     manga = MangaDownloader(yamlConfig['sites'], DEFAULT_DOWNLOAD_DIR_PATH)
     for url in INPUT_URLS:
        infos = manga.getInfo(url)
+       print(infos)
        for info in infos['episodes']:
             episode = info.copy()
             episode['title'] = infos['title']
-            if infos['isEpisode']: 
+            if IS_ALL:
+                manga.download(infos['site'], episode)
+            elif infos['isEpisode']: 
                 if 'isCurEpisode' in info.keys() and info['isCurEpisode']:
                     manga.download(infos['site'], episode)
                     break
-            else:
-                pass
 
 
 if __name__ == '__main__':
