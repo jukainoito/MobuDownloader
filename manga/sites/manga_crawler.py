@@ -45,7 +45,9 @@ class MangaCrawler:
 
     @staticmethod
     def mkEpisodeDir(saveDir, title, episodeTitle):
-        episodeDir = os.path.join(saveDir, title, episodeTitle)
+        rstr = r"[\/\\\:\*\?\"\<\>\|]"
+        newTitle = re.sub(rstr, "_", episodeTitle)
+        episodeDir = os.path.join(saveDir, title, newTitle)
         if os.path.exists(os.path.normpath(episodeDir)):
             return episodeDir
         os.makedirs(os.path.normpath(episodeDir))
