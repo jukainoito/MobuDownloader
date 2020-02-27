@@ -91,7 +91,6 @@ def main():
     manga = MangaDownloader(yamlConfig['sites'], DEFAULT_DOWNLOAD_DIR_PATH)
     for url in INPUT_URLS:
        infos = manga.getInfo(url)
-       print(infos)
        for info in infos['episodes']:
             episode = info.copy()
             episode['title'] = infos['title']

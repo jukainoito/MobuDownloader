@@ -91,6 +91,7 @@ class WebAce(MangaCrawler):
 
     def getEpisodeInfo(self, url):
         logger.info('Start get episode info from: {}'.format(url))
+        
         r = self.session.get(url, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
