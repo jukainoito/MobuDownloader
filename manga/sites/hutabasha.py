@@ -1,21 +1,29 @@
 # coding:utf-8
 
 from .manga_crawler import MangaCrawler
-import re
-import os
+import re, os
 from lxml import etree
-import threadpool
 from urllib.parse import urljoin
 from PIL import Image
 
 from io import BytesIO as Bytes2Data
 
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 class HutabashaWeblish(MangaCrawler):
 
-    domain_url = 'http://futabasha.pluginfree.com'
-    image_base_url = 'http://futabasha.pluginfree.com/cgi-bin/widget.cgi'
+    domainUrl = 'http://futabasha.pluginfree.com'
+    imageBaseUrl = 'http://futabasha.pluginfree.com/cgi-bin/widget.cgi'
     xpath = {
+        'manga_info_title': '//*[@id="webcomic_center"]/hgroup/h1/text()',
+        'manga_info_episodes': '//*[@id="backno"]/li/a',
+        'manga_info_episode_title': 'text()',
+        'manga_info_episode_link': '@href',
+
         'decode_key': '//*[@id="cKV"]/@title',
         'web_key': '//*[@id="hCN"]/@title',
         'init_data': '//*[@id="DATA"]/text()',
@@ -27,12 +35,6 @@ class HutabashaWeblish(MangaCrawler):
         'episode_title': '//*[@id="sKey2"]/@title',
 
     }
-
-    def __init__(self,  url, save_dir='.', num_workers=8):
-        self.save_dir = save_dir
-        self.url = url
-        self.num_workers = num_workers
-        self.task_pool = None
 
     @staticmethod
     def expand(_src, _key):
@@ -100,43 +102,49 @@ class HutabashaWeblish(MangaCrawler):
         _rt = ''.join(_ret)
         return _rt
 
-    def get_episode_info(self, url):
-        r = self.session.get(url, headers=self.headers)
+    def convToMangaUrl(self, url):
+        if url.find('index.shtml') == -1:
+            return re.sub('/([^/]*)$', '/index.shtml', url)
+
+        return url
+
+
+    def getEpisodeInfo(self, url):
+
+        r = self.session.get(url, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
-        decode_key = ''.join(html.xpath(self.xpath['decode_key']))
+        decodeKey = ''.join(html.xpath(self.xpath['decode_key']))
         uid = ''.join(html.xpath(self.xpath['uid']))
-        web_key = ''.join(html.xpath(self.xpath['web_key']))
+        webKey = ''.join(html.xpath(self.xpath['web_key']))
 
-        init_url = urljoin(url, 'InitVal.html')
-        ir = self.session.get(init_url, headers=self.headers)
+        initUrl = urljoin(url, 'InitVal.html')
+        ir = self.session.get(initUrl, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
         ir.encoding = 'utf-8'
-        init_html = etree.HTML(ir.text)
-        init_data = ''.join(init_html.xpath(self.xpath['init_data']))
-        init_data = self.expand(init_data, int(decode_key))
-        init_html = etree.HTML(init_data)
+        initHtml = etree.HTML(ir.text)
+        initData = ''.join(initHtml.xpath(self.xpath['init_data']))
+        initData = self.expand(initData, int(decodeKey))
+        initHtml = etree.HTML(initData)
 
-        episode_title = ''.join(init_html.xpath(self.xpath['episode_title']))
-        s = re.sub(r'%u([a-fA-F0-9]{4}|[a-fA-F0-9]{2})', lambda m: chr(int(m.group(1), 16)), episode_title)
+        episodeTitle = ''.join(initHtml.xpath(self.xpath['episode_title']))
+        s = re.sub(r'%u([a-fA-F0-9]{4}|[a-fA-F0-9]{2})', lambda m: chr(int(m.group(1), 16)), episodeTitle)
         search = re.search('\\$\\$\\{(.*)\u3000(.*)/.*', s)
         title = search.group(1)
-        episode_title = search.group(2)
+        episodeTitle = search.group(2)
 
-        page_size = ''.join(init_html.xpath(self.xpath['page_num']))
-        manga_key = ''.join(init_html.xpath(self.xpath['manga_key']))
-        image_key = ''.join(init_html.xpath(self.xpath['image_key']))
-        base_a = web_key + manga_key + '/' + manga_key + '_'
+        pageSize = ''.join(initHtml.xpath(self.xpath['page_num']))
+        mangaKey = ''.join(initHtml.xpath(self.xpath['manga_key']))
+        imageKey = ''.join(initHtml.xpath(self.xpath['image_key']))
+        baseA = webKey + mangaKey + '/' + mangaKey + '_'
 
         episodes = [{
-            "sel": True,
-            "episode": episode_title,
-            "pageSize": int(page_size),
-            "status": "",
+            "episode": episodeTitle,
+            "pageSize": int(pageSize),
             "raw": {
-                "size": int(page_size),
+                "size": int(pageSize),
                 "uid": uid,
-                "base_a": base_a,
-                "image_key": image_key
+                "base_a": baseA,
+                "image_key": imageKey
             }
         }]
         return {
@@ -189,93 +197,106 @@ class HutabashaWeblish(MangaCrawler):
 
         return '_' + bx + '_' + by
 
-    def get_manga_info(self, url):
-        return None
+    def getMangaInfo(self, url):
 
-    def get_episode_images(self, url):
-        r = self.session.get(url, headers=self.headers)
+        r = self.session.get(url, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
+        r.encoding = 'utf-8'
+        html = etree.HTML(r.text)
+        title = ''.join(html.xpath(self.xpath['manga_info_title'])).strip()
+        episodesEtree = html.xpath(self.xpath['manga_info_episodes'])
+
+        episodes = []
+        for episode in episodesEtree:
+            episodeTitle = ''.join(episode.xpath(self.xpath['manga_info_episode_title']))
+            episodeLink = ''.join(episode.xpath(self.xpath['manga_info_episode_link']))
+
+            episodeLink = self.convToMangaUrl(episodeLink)
+            episodeInfo = self.getEpisodeInfo(episodeLink)
+            episodeInfo = episodeInfo['episodes'][0]
+            episodes.append(episodeInfo)
+
+        return {
+            "title": title,
+            "episodes": episodes
+        }
+
+    def getEpisodeImages(self, url):
+        r = self.session.get(url, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
         html = etree.HTML(r.text)
         images = (html.xpath(self.xpath['episode_image_url']))
         title = ''.join(html.xpath(self.xpath['cur_episode_title']))
 
-        return title, list(map(lambda img: self.domain_url + img, images))
+        return title, list(map(lambda img: self.domainUrl + img, images))
 
-    def done(self):
-        try:
-            self.task_pool.poll(True)
-        except threadpool.NoResultsPending:
-            return True
-        return False
-
-    def get_download_episode(self, data):
-        down_episodes = []
-        for episode in data['episodes']:
-            if episode['sel']:
-                down_episodes.append(episode)
-        return down_episodes
 
     @staticmethod
-    def save_image(save_name, data):
-        open(save_name, 'wb').write(data)
+    def saveImage(savePath, data):
+        open(savePath, 'wb').write(data)
 
-    def download_image(self, episode_data, page, save_name):
-        page_str = str(page).zfill(3)
-        image_url = self.image_base_url + '?uid=' + episode_data['uid'] + '&a=' + episode_data['base_a'] + page_str
+    def downloadImage(self, episodeData, page, savePath):
+        if os.path.exists(savePath):
+            return
+
+        logger.info('Dwonload image from: {} to : {}'.format(episodeData, savePath))
+
+        pageStr = str(page).zfill(3)
+        imageUrl = self.imageBaseUrl + '?uid=' + episodeData['uid'] + '&a=' + episodeData['base_a'] + pageStr
 
         images = []
         x = 0
-        max_pos_x = 0
-        max_pos_y = 0
+        maxPosX = 0
+        maxPosY = 0
         while True:
             y = 0
-            pre_pos_y = 0
+            prePosY = 0
             while True:
-                tmp = self.getIpntStr(page, 6, episode_data['image_key'], x, y)
-                part_image_url = image_url + '_06' + tmp + '.jpg'
-                image_resp = self.session.get(part_image_url, headers=self.headers)
-                if image_resp.status_code == 404:
+                tmp = self.getIpntStr(page, 6, episodeData['image_key'], x, y)
+                partImageUrl = imageUrl + '_06' + tmp + '.jpg'
+                imageResp = self.session.get(partImageUrl, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
+                if imageResp.status_code == 404:
                     break
                 else:
-                    im = Image.open(Bytes2Data(image_resp.content))
+                    im = Image.open(Bytes2Data(imageResp.content))
                     width, height = im.size
                     images.append({
                         "x": x*480,
-                        "y": pre_pos_y,
+                        "y": prePosY,
                         "data": im
                     })
-                    pre_pos_x = x * 480 + width
-                    pre_pos_y = pre_pos_y + height
-                    if pre_pos_x > max_pos_x:
-                        max_pos_x = pre_pos_x
-                    if pre_pos_y > max_pos_y:
-                        max_pos_y = pre_pos_y
+                    prePosX = x * 480 + width
+                    prePosY = prePosY + height
+                    if prePosX > maxPosX:
+                        maxPosX = prePosX
+                    if prePosY > maxPosY:
+                        maxPosY = prePosY
                 y += 1
             if y == 0:
                 break
             x += 1
-        image = Image.new("RGB", (max_pos_x, max_pos_y))
+        image = Image.new("RGB", (maxPosX, maxPosY))
         for img in images:
             image.paste(img['data'], (img['x'], img['y']))
         if len(images) != 0:
-            image.save(save_name)
+            image.save(savePath)
 
-    def download(self, data):
-        episodes = self.get_download_episode(data)
+    def download(self, info):
+        episodeDir = self.mkEpisodeDir(self.saveDir, 
+            info['title'], info['episode'])
+        for i in range(info['raw']['size']):
+            imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
+            self.downloadImage(info['raw'], i + 1, imageSavePath)
 
-        self.task_pool = threadpool.ThreadPool(self.num_workers)
-        task_args_list = []
-        for episode in episodes:
-            episode_dir = self.mk_episode_dir(self.save_dir, data['title'], episode['episode'])
-            episode['status'] = "开始下载"
-            if episode_dir is not None:
-                for i in range(episode['raw']['size']):
-                    image_save_path = os.path.join(episode_dir, str(i + 1) + '.jpg')
-                    task_args = [episode['raw'], i + 1, image_save_path]
-                    task_args_list.append((task_args, None))
 
-        task_requests = threadpool.makeRequests(self.download_image, task_args_list)
+    def getInfo(self, url):
+        if url.find(self.domainUrl) == -1:
+            logger.info('Type: Manga')
 
-        [self.task_pool.putRequest(req) for req in task_requests]
+            episodes = self.getMangaInfo(url)
+            episodes['isEpisode'] = False
+        else:
+            logger.info('Type: Episode')
 
-    def info(self):
-        return self.get_episode_info(self.url)
+            episodes = self.getEpisodeInfo(url)
+            episodes['isEpisode'] = True
+            episodes['episodes'][0]['isCurEpisode'] = True
+        return episodes

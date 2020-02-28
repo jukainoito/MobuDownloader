@@ -1,7 +1,7 @@
 # coding:utf-8
 
 from abc import ABCMeta, abstractmethod
-import os
+import os, re
 
 import requests
 from requests.adapters import HTTPAdapter

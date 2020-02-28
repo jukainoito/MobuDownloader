@@ -1,19 +1,20 @@
 # coding:utf-8
 
 from .manga_crawler import MangaCrawler
-import re
-import os
+import re, os
 from lxml import etree
-import threadpool
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class AlifaPolis(MangaCrawler):
 
-    domain_url = 'https://www.alphapolis.co.jp'
+    domainUrl = 'https://www.alphapolis.co.jp'
     xpath = {
         'title': '//*[@class="title"]/h1/text()',
-        'episodes': '//*[@class="episode "]',
+        'episodes': '//*[@class="episode"]',
         'episode_url': '@href',
         'episode_title': 'div[2]/div[1]/text()',
         'cur_manga_title': '//*[@class="menu official"]/h1/text()',
@@ -21,34 +22,27 @@ class AlifaPolis(MangaCrawler):
         'cur_images_data': '/html/body/script[2]/text()'
     }
 
-    def __init__(self,  url, save_dir='.', num_workers=8):
-        self.save_dir = save_dir
-        self.url = url
-        self.num_workers = num_workers
-        self.task_pool = None
-
-    def parse_images(self, js_content):
-        target = (js_content.split('_pages.push("first");')[1]).split('_pages.push("last");')[0]
+    def parseImages(self, jsContent):
+        target = (jsContent.split('var _pages = [];')[1]).split('var _max_page = _pages.length;')[0]
+        # target = (jsContent.split('_pages.push("first");')[1]).split('_pages.push("last");')[0]
         regex = re.compile("http[^\"]*")
         return regex.findall(target)
 
-    def get_episode_info(self, url):
+    def getEpisodeInfo(self, url):
         r = self.session.get(url, headers=self.headers)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
 
         title = ''.join(html.xpath(self.xpath['cur_manga_title']))
 
-        episode_title = ''.join(html.xpath(self.xpath['cur_episode_title']))
-        js_content = ''.join(html.xpath(self.xpath['cur_images_data']))
+        episodeTitle = ''.join(html.xpath(self.xpath['cur_episode_title']))
+        jsContent = ''.join(html.xpath(self.xpath['cur_images_data']))
 
-        images = self.parse_images(js_content)
+        images = self.parseImages(jsContent)
 
         episodes = [{
-            "sel": True,
-            "episode": episode_title,
+            "episode": episodeTitle,
             "pageSize": len(images),
-            "status": "",
             "raw": {
                 "url": url,
                 'images': images
@@ -59,7 +53,7 @@ class AlifaPolis(MangaCrawler):
             "episodes": episodes
         }
 
-    def get_manga_info(self, url):
+    def getMangaInfo(self, url):
         r = self.session.get(url, headers=self.headers)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
@@ -67,14 +61,14 @@ class AlifaPolis(MangaCrawler):
         title = ''.join(html.xpath(self.xpath['title']))
         episodes = []
 
-        episodes_etree = html.xpath(self.xpath['episodes'])
-        for episode in episodes_etree:
-            episode_title = ''.join(episode.xpath(self.xpath['episode_title']))
-            episode_url = ''.join(episode.xpath(self.xpath['episode_url']))
+        episodesEtree = html.xpath(self.xpath['episodes'])
+        for episode in episodesEtree:
+            episodeTitle = ''.join(episode.xpath(self.xpath['episode_title']))
+            episodeUrl = ''.join(episode.xpath(self.xpath['episode_url']))
             episodes.append({
-                "sel": False, "episode": episode_title,
-                "pageSize": "", "status": "", "raw": {
-                    "url": self.domain_url + episode_url
+                "episode": episodeTitle,
+                "pageSize": "", "raw": {
+                    "url": self.domainUrl + episodeUrl
                 }
             })
         return {
@@ -82,65 +76,57 @@ class AlifaPolis(MangaCrawler):
             "episodes": episodes
         }
 
-    def get_episode_images(self, url):
+    def getEpisodeImages(self, url):
         r = self.session.get(url, headers=self.headers)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
-        js_content = ''.join(html.xpath(self.xpath['cur_images_data']))
+        jsContent = ''.join(html.xpath(self.xpath['cur_images_data']))
 
-        images = self.parse_images(js_content)
+        images = self.parseImages(jsContent)
 
         return images
 
-    def done(self):
-        try:
-            self.task_pool.poll(True)
-        except threadpool.NoResultsPending:
-            return True
-        return False
-
-    def get_download_episode(self, data):
-        down_episodes = []
-        for episode in data['episodes']:
-            if episode['sel']:
-                if 'images' not in episode["raw"].keys():
-                    images = self.get_episode_images(episode["raw"]["url"])
-                    episode['pageSize'] = len(images)
-                    episode['raw']['images'] = images
-                down_episodes.append(episode)
-        return down_episodes
-
     @staticmethod
-    def save_image(save_name, data):
-        open(save_name, 'wb').write(data)
+    def saveImage(savePath, data):
+        open(savePath, 'wb').write(data)
 
-    def download_image(self, image_url, save_name):
+    def downloadImage(self, imageUrl, savePath):        
+        if os.path.exists(savePath):
+            return
 
-        image = self.session.get(image_url, headers=self.headers)
-        self.save_image(save_name, image.content)
+        logger.info('Dwonload image from: {} to : {}'.format(imageUrl, savePath))
 
-    def download(self, data):
-        episodes = self.get_download_episode(data)
+        image = self.session.get(imageUrl, headers=self.headers)
+        self.saveImage(savePath, image.content)
 
-        self.task_pool = threadpool.ThreadPool(self.num_workers)
-        task_args_list = []
-        for episode in episodes:
-            episode_dir = self.mk_episode_dir(self.save_dir, data['title'], episode['episode'])
-            episode['status'] = "开始下载"
-            if episode_dir is not None:
-                for i in range(len(episode['raw']['images'])):
-                    image_url = episode['raw']['images'][i]
-                    image_save_path = os.path.join(episode_dir, str(i + 1) + '.jpg')
-                    task_args = [image_url, image_save_path]
-                    task_args_list.append((task_args, None))
+    def download(self, info):
+        episodeDir = self.mkEpisodeDir(self.saveDir, 
+            info['title'], info['episode'])
 
-        task_requests = threadpool.makeRequests(self.download_image, task_args_list)
+        if 'images' not in info['raw'].keys():
+            images = self.getEpisodeImages(info['raw']['url'])
+            info['pageSize'] = len(images)
+            info['raw']['images'] = images
+        else:
+            images = info['raw']['images']
 
-        [self.task_pool.putRequest(req) for req in task_requests]
+        for i in range(len(images)):
+            imageUrl = images[i]
+            imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
+            self.downloadImage(imageUrl, imageSavePath)
+        
 
-    def info(self):
-        if re.match('^http.*/official/(\\d+)/(\\d+)/?$', self.url):
-            return self.get_episode_info(self.url)
-        elif re.match('^http.*/official/(\\d+)/?$', self.url):
-            return self.get_manga_info(self.url)
-        return None
+    def getInfo(self, url):
+        episodes = None
+        if re.match('^http.*/official/(\\d+)/(\\d+)/?$', url):
+            logger.info('Type: Episode')
+
+            episodes = self.getEpisodeInfo(url)
+            episodes['isEpisode'] = False
+            episodes['episodes'][0]['isCurEpisode'] = True
+        elif re.match('^http.*/official/(\\d+)/?$', url):
+            logger.info('Type: Manga')
+
+            episodes = self.getMangaInfo(url)
+            episodes['isEpisode'] = False
+        return episodes

@@ -23,7 +23,6 @@ class WebMedu(MangaCrawler):
     }
 
     def getEpisodeInfo(self, url):
-        logger.info('Start get episode info from: {}'.format(url))
         
         r = self.session.get(url, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
         r.encoding = 'utf-8'
@@ -47,8 +46,6 @@ class WebMedu(MangaCrawler):
         }
 
     def getMangaInfo(self, url):
-
-        logger.info('Start get manga info from: {}'.format(url))
 
         r = self.session.get(url, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
         r.encoding = 'utf-8'
@@ -119,9 +116,13 @@ class WebMedu(MangaCrawler):
 
     def getInfo(self, url):
         if re.search(".*/wk/.*", url):
+            logger.info('Type: Manga')
+
             episodes = self.getMangaInfo(url)
             episodes['isEpisode'] = False
         else:
+            logger.info('Type: Episode')
+
             episodes = self.getEpisodeInfo(url)
             episodes['isEpisode'] = True
             episodes['episodes'][0]['isCurEpisode'] = True

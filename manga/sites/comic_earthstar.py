@@ -40,7 +40,6 @@ class ComicEarthStat(MangaCrawler):
         return episodeInfo
 
     def getEpisodeInfo(self, url):
-        logger.info('Start get episode info from: {}'.format(url))
 
         episodeInfo = self.getEpisodeStorageInfo(url)
         if episodeInfo is None:
@@ -56,8 +55,6 @@ class ComicEarthStat(MangaCrawler):
         return episodes
 
     def getMangaInfo(self, url, nowEpisodeTitle=None):
-
-        logger.info('Start get manga info from: {}'.format(url))
 
         pattern = re.compile(r'(http[s]?://(www.)comic-earthstar.jp/detail/[^/]*)/?.*')
         findRes = pattern.findall(url)
@@ -168,9 +165,13 @@ class ComicEarthStat(MangaCrawler):
 
     def getInfo(self, url):
         if re.search("//(www.)?comic-earthstar.jp", url) is not None:
+            logger.info('Type: Manga')
+
             episodes = self.getMangaInfo(url)
             episodes['isEpisode'] = False
         else:
+            logger.info('Type: Episode')
+            
             episodes = self.getEpisodeInfo(url)
             episodes['isEpisode'] = True
         return episodes

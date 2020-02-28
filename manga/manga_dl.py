@@ -75,7 +75,7 @@ class MangaDownloader(object):
 		}
 	'''
 	def download(self, site, info):
-		logger.info('Start download title: {}  episode: {}'.format(info['title'], info['episode']))
+		logger.info('Start download title: {}  episode: {} url: {}'.format(info['title'], info['episode'], info['raw']['url']))
 		mangaDL = self.manga[site]
 		mangaDL.download(info)
 		logger.info('Download complete title: {}  episode: {}'.format(info['title'], info['episode']))

@@ -87,7 +87,7 @@ def readConfigFromYAML(file):
 
 def main():
     yamlConfig = readConfigFromYAML(YAML_CONFIG_PATH)
-    logger.info("Load config: {}".format(yamlConfig))
+    logger.debug("Load config: {}".format(yamlConfig))
     manga = MangaDownloader(yamlConfig['sites'], DEFAULT_DOWNLOAD_DIR_PATH)
     for url in INPUT_URLS:
        infos = manga.getInfo(url)

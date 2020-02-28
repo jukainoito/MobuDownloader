@@ -62,7 +62,6 @@ class WebAce(MangaCrawler):
         if re.search("episode/+$", url) is None:
             url = url + '/episode/'
 
-        logger.info('Start get manga info from: {}'.format(url))
         r = self.session.get(url, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
@@ -90,7 +89,6 @@ class WebAce(MangaCrawler):
 
 
     def getEpisodeInfo(self, url):
-        logger.info('Start get episode info from: {}'.format(url))
         
         r = self.session.get(url, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
         r.encoding = 'utf-8'
@@ -115,9 +113,13 @@ class WebAce(MangaCrawler):
 
     def getInfo(self, url):
         if re.search("/+episode/+\\d+/*$", url) is None:
+            logger.info('Type: Manga')
+
             episodes = self.getMangaInfo(url)
             episodes['isEpisode'] = False
         else:
+            logger.info('Type: Episode')
+
             episodes = self.getEpisodeInfo(url)
             episodes['isEpisode'] = True
             episodes['episodes'][0]['isCurEpisode'] = True
