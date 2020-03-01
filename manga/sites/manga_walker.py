@@ -26,7 +26,7 @@ class MangaWalker(MangaCrawler):
     }
 
     def getEpisodeInfo(self, url):
-        r = self.session.get(url, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
+        r = self.webGet(url)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
         scriptStr = ''.join(html.xpath('/html/head/script[1]/text()'))
@@ -44,7 +44,7 @@ class MangaWalker(MangaCrawler):
         }
 
     def getMangaInfo(self, url):
-        r = self.session.get(url, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
+        r = self.webGet(url)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
 
@@ -72,7 +72,7 @@ class MangaWalker(MangaCrawler):
 
     def getImageData(self, cid):
         apiUrl = self.apiUrlTemp.substitute(cid=cid)
-        r = self.session.get(apiUrl, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
+        r = self.webGet(apiUrl)
         apiData = json.loads(r.text)
         if apiData['meta']['status'] == 200:
             return apiData['data']['result']
@@ -101,7 +101,7 @@ class MangaWalker(MangaCrawler):
 
         logger.info('Dwonload image from: {} to : {}'.format(imageInfo['meta']['source_url'], savePath))
         
-        imageData = self.session.get(imageInfo['meta']['source_url'], headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
+        imageData = self.webGet(imageInfo['meta']['source_url'])
 
         key = bytearray(imageKey)
         data = bytearray(imageData.content)
@@ -117,7 +117,10 @@ class MangaWalker(MangaCrawler):
         imageData = self.getImageData(info['raw']['episode_id'])
         info['raw']['images'] = imageData
         info['pageSize'] = len(imageData)
-        for imageInfo in imageData:
+
+        for i in self.tqdm.trange(len(imageData), ncols=75, unit='page'):
+        # for imageInfo in imageData:
+            imageInfo = imageData[i]
             self.downloadImage(imageInfo, episodeDir)
 
 

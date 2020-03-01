@@ -111,7 +111,7 @@ class HutabashaWeblish(MangaCrawler):
 
     def getEpisodeInfo(self, url):
 
-        r = self.session.get(url, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
+        r = self.webGet(url)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
         decodeKey = ''.join(html.xpath(self.xpath['decode_key']))
@@ -119,7 +119,7 @@ class HutabashaWeblish(MangaCrawler):
         webKey = ''.join(html.xpath(self.xpath['web_key']))
 
         initUrl = urljoin(url, 'InitVal.html')
-        ir = self.session.get(initUrl, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
+        ir = self.webGet(initUrl)
         ir.encoding = 'utf-8'
         initHtml = etree.HTML(ir.text)
         initData = ''.join(initHtml.xpath(self.xpath['init_data']))
@@ -141,6 +141,7 @@ class HutabashaWeblish(MangaCrawler):
             "episode": episodeTitle,
             "pageSize": int(pageSize),
             "raw": {
+                "url": url,
                 "size": int(pageSize),
                 "uid": uid,
                 "base_a": baseA,
@@ -199,7 +200,7 @@ class HutabashaWeblish(MangaCrawler):
 
     def getMangaInfo(self, url):
 
-        r = self.session.get(url, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
+        r = self.webGet(url)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
         title = ''.join(html.xpath(self.xpath['manga_info_title'])).strip()
@@ -221,7 +222,7 @@ class HutabashaWeblish(MangaCrawler):
         }
 
     def getEpisodeImages(self, url):
-        r = self.session.get(url, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
+        r = self.webGet(url)
         html = etree.HTML(r.text)
         images = (html.xpath(self.xpath['episode_image_url']))
         title = ''.join(html.xpath(self.xpath['cur_episode_title']))
@@ -252,7 +253,7 @@ class HutabashaWeblish(MangaCrawler):
             while True:
                 tmp = self.getIpntStr(page, 6, episodeData['image_key'], x, y)
                 partImageUrl = imageUrl + '_06' + tmp + '.jpg'
-                imageResp = self.session.get(partImageUrl, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
+                imageResp = self.webGet(partImageUrl)
                 if imageResp.status_code == 404:
                     break
                 else:
@@ -282,7 +283,9 @@ class HutabashaWeblish(MangaCrawler):
     def download(self, info):
         episodeDir = self.mkEpisodeDir(self.saveDir, 
             info['title'], info['episode'])
-        for i in range(info['raw']['size']):
+
+        for i in self.tqdm.trange(info['raw']['size'], ncols=75, unit='page'):
+        # for i in range(info['raw']['size']):
             imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
             self.downloadImage(info['raw'], i + 1, imageSavePath)
 

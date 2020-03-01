@@ -25,14 +25,10 @@ class WebAce(MangaCrawler):
 
     def getEpisodeImages(self, url):
         url = url + '/json/'
-        r = self.session.get(url, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
+        r = self.webGet(url)
         images = r.json()
 
         return list(map(lambda img: self.domainUrl + img, images))
-
-    @staticmethod
-    def saveImage(savePath, data):
-        open(savePath, 'wb').write(data)
 
     @staticmethod
     def saveImage(savePath, data):
@@ -44,7 +40,7 @@ class WebAce(MangaCrawler):
 
         logger.info('Dwonload image from: {} to : {}'.format(imageUrl, savePath))
 
-        image = self.session.get(imageUrl, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
+        image = self.webGet(imageUrl)
         self.saveImage(savePath, image.content)
 
     def download(self, info):
@@ -52,7 +48,9 @@ class WebAce(MangaCrawler):
             info['title'], info['episode'])
         imageData = self.getEpisodeImages(info['raw']['url'])
         info['raw']['images'] = imageData
-        for i in range(len(imageData)):
+        
+        for i in self.tqdm.trange(len(imageData), ncols=75, unit='page'):
+        # for i in range(len(imageData)):
             imageUrl = imageData[i]
             imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
             self.downloadImage(imageUrl, imageSavePath)
@@ -62,7 +60,7 @@ class WebAce(MangaCrawler):
         if re.search("episode/+$", url) is None:
             url = url + '/episode/'
 
-        r = self.session.get(url, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
+        r = self.webGet(url)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
 
@@ -90,7 +88,7 @@ class WebAce(MangaCrawler):
 
     def getEpisodeInfo(self, url):
         
-        r = self.session.get(url, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
+        r = self.webGet(url)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
 

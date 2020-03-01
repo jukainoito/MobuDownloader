@@ -34,7 +34,7 @@ class ComicEarthStat(MangaCrawler):
             return None
         cid = cid[0]
         infoApiUrl = self.episodeInfoApiUrl + '?cid='+cid
-        r = self.session.get(infoApiUrl, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
+        r = self.webGet(infoApiUrl)
         episodeInfo = r.json()
 
         return episodeInfo
@@ -64,7 +64,7 @@ class ComicEarthStat(MangaCrawler):
         jsonUrl = findRes[0][0] + '.json'
         jsonUrl = jsonUrl.replace('detail', 'json/contents/detail')
 
-        r = self.session.get(jsonUrl, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
+        r = self.webGet(jsonUrl)
         r.encoding = 'utf-8'
         mangaInfo = r.json()
         title = mangaInfo['categorys']['comic_category_title']
@@ -89,7 +89,7 @@ class ComicEarthStat(MangaCrawler):
     def getEpisodeImages(self, url):
         episodeStorageInfo = self.getEpisodeStorageInfo(url)
         imagesApiUrl = episodeStorageInfo['url'] + 'configuration_pack.json'
-        r = self.session.get(imagesApiUrl, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
+        r = self.webGet(imagesApiUrl)
         imageData = r.json()
         return {
             "episodeStorageInfoUrl": episodeStorageInfo['url'],
@@ -97,7 +97,7 @@ class ComicEarthStat(MangaCrawler):
         }
 
     def downloadImageData(self, url, savePath, a3fData):
-        r = self.session.get(url, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
+        r = self.webGet(url)
         self.handleImage(r.content, savePath, a3fData)
 
     @staticmethod
@@ -157,10 +157,12 @@ class ComicEarthStat(MangaCrawler):
         episodeStorageUrl = imageData['episodeStorageInfoUrl']
         images = imageData['data']
 
-        for image in images['configuration']['contents']:
-                extendData = images[image['original-file-path']]
-                image['extend'] = extendData
-                self.downloadImage(episodeStorageUrl, episodeDir, image)
+        for i in self.tqdm.trange(len(images['configuration']['contents']), ncols=75, unit='page'):
+        # for image in images['configuration']['contents']:
+            image = images['configuration']['contents'][i]
+            extendData = images[image['original-file-path']]
+            image['extend'] = extendData
+            self.downloadImage(episodeStorageUrl, episodeDir, image)
 
 
     def getInfo(self, url):

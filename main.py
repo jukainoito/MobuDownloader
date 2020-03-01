@@ -14,8 +14,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument('urls', nargs='+',  help='input download url')
 parser.add_argument("-c", "-config", "--config", help="YAML config file", action="store")
 parser.add_argument("-d", "-dir", "--dir", help="download file save to directory path", action="store")
+parser.add_argument("-debug", "--debug", help="debug", action="store_true")
 # parser.add_argument("-g", "-gui", "--gui", help="Use gui", action="store_true")
-# parser.add_argument("-a", "-all", "--all", help="download all episodes", action="store_true")
+parser.add_argument("-a", "-all", "--all", help="download all episodes", action="store_true")
 args = parser.parse_args()
 
 
@@ -23,13 +24,15 @@ PROGRAM_DIR_PATH = os.path.dirname(os.path.abspath(sys.argv[0]))
 DEFAULT_LOG_PATH = os.path.join(PROGRAM_DIR_PATH, 'run.log')
 DEFAULT_DOWNLOAD_DIR_PATH = os.path.join(PROGRAM_DIR_PATH, 'download')
 
-# IS_ALL = args.all
+IS_DEBUG = args.debug
+
+IS_ALL = args.all
 # IS_GUI = args.gui
 # if IS_GUI:
 #     print('WARRING: now unsupport gui')
 #     IS_GUI = False
 
-IS_ALL = True
+# IS_ALL = True
 IS_GUI = False
 
 
@@ -44,8 +47,6 @@ if args.dir is not None:
 INPUT_URLS = args.urls
 
 
-logging.basicConfig(level = logging.INFO, format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
 
 def getValueOfDict(key, dictData):
     if key in dictData:
@@ -87,6 +88,16 @@ def readConfigFromYAML(file):
 
 def main():
     yamlConfig = readConfigFromYAML(YAML_CONFIG_PATH)
+
+
+    global logger
+
+    logging.basicConfig(level = logging.DEBUG if IS_DEBUG else logging.INFO, 
+            filename=None if IS_DEBUG else yamlConfig['log'], filemode="a",
+            format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    logger = logging.getLogger(__name__)
+
     logger.debug("Load config: {}".format(yamlConfig))
     manga = MangaDownloader(yamlConfig['sites'], DEFAULT_DOWNLOAD_DIR_PATH)
     for url in INPUT_URLS:

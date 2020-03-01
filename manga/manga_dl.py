@@ -1,7 +1,7 @@
 # coding:utf-8
 
 import json
-import os
+import os, sys
 
 from .sites import sites
 
@@ -10,6 +10,8 @@ from urllib.parse import urlparse
 import logging
 
 logger = logging.getLogger(__name__)
+
+from tqdm import tqdm
 
 class MangaDownloader(object):
 	def __init__(self, sitesConfig, saveDir):
@@ -50,6 +52,9 @@ class MangaDownloader(object):
 
 	def getMangaDL(self, url):
 		site = self.getSite(url)
+		if site not in sites.keys():
+			print('Error: unsupport site')
+			sys.exit(0)
 		if site in self.manga.keys():
 			mangaDL = self.manga[site]
 		else:
@@ -62,11 +67,14 @@ class MangaDownloader(object):
 	def getInfo(self, url):
 		mangaDL = self.getMangaDL(url)
 		logger.info('Start get manga info: {}'.format(url))
-		info = mangaDL.getInfo(url)
-		info['site'] = self.getSite(url)
-		logger.debug('url info: {}'.format(info))
-		return info
-
+		try:
+			info = mangaDL.getInfo(url)
+			info['site'] = self.getSite(url)
+			logger.debug('url info: {}'.format(info))
+			return info
+		except:
+			print('Parse error: {} '.format(url))
+			sys.exit(-1)
 	'''
 		info = {
 			"title":  manga title|string,
@@ -77,6 +85,7 @@ class MangaDownloader(object):
 	def download(self, site, info):
 		logger.info('Start download title: {}  episode: {} url: {}'.format(info['title'], info['episode'], info['raw']['url']))
 		mangaDL = self.manga[site]
+		print('Downloading: {} - {}'.format(info['title'], info['episode']))
 		mangaDL.download(info)
 		logger.info('Download complete title: {}  episode: {}'.format(info['title'], info['episode']))
 

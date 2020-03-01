@@ -32,7 +32,7 @@ class MangaPoke(MangaCrawler):
     EPISODES_URL = "https://pocket.shonenmagazine.com/api/viewer/readable_products"
 
     def getInfo(self, url):
-        page = self.session.get(url, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
+        page = self.webGet(url)
         page.encoding = 'utf-8'
         html = etree.HTML(page.text)
 
@@ -60,7 +60,7 @@ class MangaPoke(MangaCrawler):
             "read_more_num": 250,
             "type": "episode"
         }
-        r = self.session.get(self.EPISODES_URL, params=params, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
+        r = self.webGet(self.EPISODES_URL, params=params)
         html = r.json()["html"]
         html = etree.HTML(html)
         free_episodes = html.xpath('//*[@class="test-readable-product-is-free series-episode-list-is-free"]/../..')
@@ -82,7 +82,7 @@ class MangaPoke(MangaCrawler):
 
 
     def getEpisodeImages(self, url):
-        page = self.session.get(url+'.json', headers=self.headers)
+        page = self.webGet(url+'.json')
         page.encoding = 'utf-8'
         data = page.json()
         imageData = data['readableProduct']['pageStructure']['pages']
@@ -93,7 +93,7 @@ class MangaPoke(MangaCrawler):
             return
         logger.info('Dwonload image from: {} to: {}'.format(url, savePath))
 
-        r = self.session.get(url)
+        r = self.webGet(url)
         logger.debug('Start handle image: {}'.format(savePath))
         self.handleImage(r.content, savePath)
 
@@ -139,7 +139,10 @@ class MangaPoke(MangaCrawler):
         episodeDir = self.mkEpisodeDir(self.saveDir, 
             info['title'], info['episode'])
         info = self.getDownloadEpisodeData(info)
-        for i, image in enumerate(info['raw']['images']):
+
+        for i in self.tqdm.trange(len(info['raw']['images']), ncols=75, unit='page'):
+        # for i, image in enumerate(info['raw']['images']):
+            image = info['raw']['images'][i]
             imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
             self.downloadImage(image['src'], imageSavePath)
 

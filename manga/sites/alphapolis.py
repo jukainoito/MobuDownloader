@@ -24,12 +24,11 @@ class AlifaPolis(MangaCrawler):
 
     def parseImages(self, jsContent):
         target = (jsContent.split('var _pages = [];')[1]).split('var _max_page = _pages.length;')[0]
-        # target = (jsContent.split('_pages.push("first");')[1]).split('_pages.push("last");')[0]
         regex = re.compile("http[^\"]*")
         return regex.findall(target)
 
     def getEpisodeInfo(self, url):
-        r = self.session.get(url, headers=self.headers)
+        r = self.webGet(url)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
 
@@ -54,7 +53,7 @@ class AlifaPolis(MangaCrawler):
         }
 
     def getMangaInfo(self, url):
-        r = self.session.get(url, headers=self.headers)
+        r = self.webGett(url)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
 
@@ -77,7 +76,7 @@ class AlifaPolis(MangaCrawler):
         }
 
     def getEpisodeImages(self, url):
-        r = self.session.get(url, headers=self.headers)
+        r = self.webGet(url)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
         jsContent = ''.join(html.xpath(self.xpath['cur_images_data']))
@@ -96,7 +95,7 @@ class AlifaPolis(MangaCrawler):
 
         logger.info('Dwonload image from: {} to : {}'.format(imageUrl, savePath))
 
-        image = self.session.get(imageUrl, headers=self.headers)
+        image = self.webGet(imageUrl)
         self.saveImage(savePath, image.content)
 
     def download(self, info):
@@ -110,7 +109,7 @@ class AlifaPolis(MangaCrawler):
         else:
             images = info['raw']['images']
 
-        for i in range(len(images)):
+        for i in self.tqdm.trange(len(images), ncols=75, unit='page'):
             imageUrl = images[i]
             imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
             self.downloadImage(imageUrl, imageSavePath)

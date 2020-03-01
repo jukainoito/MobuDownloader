@@ -7,6 +7,8 @@ import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
+import tqdm
+
 import urllib3
 urllib3.disable_warnings()
 
@@ -22,10 +24,14 @@ class MangaCrawler:
     session.mount('http://', adapter)
     session.mount('https://', adapter)
 
-    def __init__(self, saveDir='.', cookies=None, proxy=None):
+    def __init__(self, saveDir='.', cookies=None, proxy=None, tqdmObj=None):
         self.saveDir = saveDir
         self.cookies = cookies
         self.proxy = proxy
+        if tqdmObj is not None:
+            self.tqdm = tqdmObj
+        else:
+            self.tqdm = tqdm
         if self.proxy is not None:
             self.proxies = {
                 'http': self.proxy,
@@ -41,6 +47,9 @@ class MangaCrawler:
     @abstractmethod
     def download(self, info):
         pass
+
+    def webGet(self, url, params=None):
+        return self.session.get(url, params=params, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
 
 
     @staticmethod
