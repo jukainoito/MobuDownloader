@@ -91,7 +91,8 @@ class MangaWalker(MangaCrawler):
     def saveImage(savePath, data):
         open(savePath, 'wb').write(data)
 
-    def downloadImage(self, imageInfo, episodeDir):
+    @MangaCrawler.update_pbar
+    async def downloadImage(self, imageInfo, episodeDir):
 
         imageKey = self.genKey(imageInfo['meta']['drm_hash'])
         savePath = os.path.join(episodeDir, str(imageInfo['id']) + '.jpg')
@@ -111,17 +112,23 @@ class MangaWalker(MangaCrawler):
 
         self.saveImage(savePath, data)
 
-    def download(self, info):
+    async def download(self, info):
         episodeDir = self.mkEpisodeDir(self.saveDir, 
             info['title'], info['episode'])
         imageData = self.getImageData(info['raw']['episode_id'])
         info['raw']['images'] = imageData
         info['pageSize'] = len(imageData)
 
-        for i in self.tqdm.trange(len(imageData), ncols=75, unit='page'):
-        # for imageInfo in imageData:
-            imageInfo = imageData[i]
-            self.downloadImage(imageInfo, episodeDir)
+        # for i in self.tqdm.trange(len(imageData), ncols=75, unit='page'):
+        with self.tqdm.tqdm(total=len(imageData), ncols=75, unit='page') as pbar:
+            self.pbar = pbar
+            tasks = []
+            for imageInfo in imageData:
+                imageInfo = imageData[i]
+                task = asyncio.ensure_future(self.downloadImage(imageInfo, episodeDir))
+                tasks.append(task)
+            await asyncio.gather(*tasks)
+            self.pbar = None
 
 
 

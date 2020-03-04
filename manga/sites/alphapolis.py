@@ -8,6 +8,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+import asyncio
+
 
 class AlifaPolis(MangaCrawler):
 
@@ -89,16 +91,15 @@ class AlifaPolis(MangaCrawler):
     def saveImage(savePath, data):
         open(savePath, 'wb').write(data)
 
-    def downloadImage(self, imageUrl, savePath):        
-        if os.path.exists(savePath):
-            return
+    @MangaCrawler.update_pbar
+    async def downloadImage(self, imageUrl, savePath):        
+        if not os.path.exists(savePath):
+            logger.info('Dwonload image from: {} to : {}'.format(imageUrl, savePath))
 
-        logger.info('Dwonload image from: {} to : {}'.format(imageUrl, savePath))
+            image = self.webGet(imageUrl)
+            self.saveImage(savePath, image.content)
 
-        image = self.webGet(imageUrl)
-        self.saveImage(savePath, image.content)
-
-    def download(self, info):
+    async def download(self, info):
         episodeDir = self.mkEpisodeDir(self.saveDir, 
             info['title'], info['episode'])
 
@@ -109,10 +110,17 @@ class AlifaPolis(MangaCrawler):
         else:
             images = info['raw']['images']
 
-        for i in self.tqdm.trange(len(images), ncols=75, unit='page'):
-            imageUrl = images[i]
-            imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
-            self.downloadImage(imageUrl, imageSavePath)
+        with self.tqdm.tqdm(total=len(images), ncols=75, unit='page') as pbar:
+            self.pbar = pbar
+            tasks = []
+        # for i in self.tqdm.trange(len(images), ncols=75, unit='page'):
+            for i in range(len(images)):
+                imageUrl = images[i]
+                imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
+                task = asyncio.ensure_future(self.downloadImage(imageUrl, imageSavePath))
+                tasks.append(task)
+            await asyncio.gather(*tasks)
+            self.pbar = None
         
 
     def getInfo(self, url):
@@ -121,7 +129,7 @@ class AlifaPolis(MangaCrawler):
             logger.info('Type: Episode')
 
             episodes = self.getEpisodeInfo(url)
-            episodes['isEpisode'] = False
+            episodes['isEpisode'] = True
             episodes['episodes'][0]['isCurEpisode'] = True
         elif re.match('^http.*/official/(\\d+)/?$', url):
             logger.info('Type: Manga')

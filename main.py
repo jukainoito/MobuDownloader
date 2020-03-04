@@ -9,9 +9,8 @@ import logging
 
 from manga import sites, MangaDownloader
 
-
 parser = argparse.ArgumentParser()
-parser.add_argument('urls', nargs='+',  help='input download url')
+parser.add_argument('urls', nargs='*',  help='input download url')
 parser.add_argument("-c", "-config", "--config", help="YAML config file", action="store")
 parser.add_argument("-d", "-dir", "--dir", help="download file save to directory path", action="store")
 parser.add_argument("-debug", "--debug", help="debug", action="store_true")
@@ -28,11 +27,6 @@ IS_DEBUG = args.debug
 
 IS_ALL = args.all
 # IS_GUI = args.gui
-# if IS_GUI:
-#     print('WARRING: now unsupport gui')
-#     IS_GUI = False
-
-# IS_ALL = True
 IS_GUI = False
 
 

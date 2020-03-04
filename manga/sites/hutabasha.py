@@ -234,7 +234,8 @@ class HutabashaWeblish(MangaCrawler):
     def saveImage(savePath, data):
         open(savePath, 'wb').write(data)
 
-    def downloadImage(self, episodeData, page, savePath):
+    @MangaCrawler.update_pbar
+    async def downloadImage(self, episodeData, page, savePath):
         if os.path.exists(savePath):
             return
 
@@ -280,14 +281,20 @@ class HutabashaWeblish(MangaCrawler):
         if len(images) != 0:
             image.save(savePath)
 
-    def download(self, info):
+    async def download(self, info):
         episodeDir = self.mkEpisodeDir(self.saveDir, 
             info['title'], info['episode'])
 
-        for i in self.tqdm.trange(info['raw']['size'], ncols=75, unit='page'):
-        # for i in range(info['raw']['size']):
-            imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
-            self.downloadImage(info['raw'], i + 1, imageSavePath)
+        with self.tqdm.tqdm(total=info['raw']['size'], ncols=75, unit='page') as pbar:
+            self.pbar = pbar
+            tasks = []
+        # for i in self.tqdm.trange(info['raw']['size'], ncols=75, unit='page'):
+            for i in range(info['raw']['size']):
+                imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
+                task = asyncio.ensure_future(self.downloadImage(info['raw'], i + 1, imageSavePath))
+                tasks.append(task)
+            await asyncio.gather(*tasks)
+            self.pbar = None
 
 
     def getInfo(self, url):

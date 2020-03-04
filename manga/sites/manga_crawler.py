@@ -8,9 +8,12 @@ from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
 import tqdm
+from functools import wraps
 
 import urllib3
 urllib3.disable_warnings()
+
+import asyncio
 
 class MangaCrawler:
     __metaclass__ = ABCMeta
@@ -45,8 +48,20 @@ class MangaCrawler:
         pass
 
     @abstractmethod
-    def download(self, info):
+    async def download(self, info):
         pass
+
+
+    @staticmethod
+    def update_pbar(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            selfObj = args[0]
+            result = await func(*args, **kwargs)
+            if selfObj.pbar is not None:
+                selfObj.pbar.update()
+            return result
+        return wrapper
 
     def webGet(self, url, params=None):
         return self.session.get(url, params=params, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)

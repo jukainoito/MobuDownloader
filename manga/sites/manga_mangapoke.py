@@ -88,7 +88,8 @@ class MangaPoke(MangaCrawler):
         imageData = data['readableProduct']['pageStructure']['pages']
         return list(filter(lambda image: 'src' in image.keys(), imageData))
 
-    def downloadImage(self, url, savePath):
+    @MangaCrawler.update_pbar
+    async def downloadImage(self, url, savePath):
         if os.path.exists(savePath):
             return
         logger.info('Dwonload image from: {} to: {}'.format(url, savePath))
@@ -135,14 +136,20 @@ class MangaPoke(MangaCrawler):
         info['raw']['images'] = images
         return info
 
-    def download(self, info):
+    async def download(self, info):
         episodeDir = self.mkEpisodeDir(self.saveDir, 
             info['title'], info['episode'])
         info = self.getDownloadEpisodeData(info)
 
-        for i in self.tqdm.trange(len(info['raw']['images']), ncols=75, unit='page'):
-        # for i, image in enumerate(info['raw']['images']):
-            image = info['raw']['images'][i]
-            imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
-            self.downloadImage(image['src'], imageSavePath)
+        # for i in self.tqdm.trange(len(info['raw']['images']), ncols=75, unit='page'):
+        with self.tqdm.tqdm(total=len(info['raw']['images']), ncols=75, unit='page') as pbar:
+            self.pbar = pbar
+            tasks = []
+            for i, image in enumerate(info['raw']['images']):
+                image = info['raw']['images'][i]
+                imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
+                task = asyncio.ensure_future(self.downloadImage(image['src'], imageSavePath))
+                tasks.append(task)
+            await asyncio.gather(*tasks)
+            self.pbar = None
 

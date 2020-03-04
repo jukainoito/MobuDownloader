@@ -124,7 +124,8 @@ class ComicEarthStat(MangaCrawler):
         baseHeight = 64
         return self.a3f(width, height, baseWidth, baseHeight, pattern)
 
-    def downloadImage(self, episodeStorageUrl, episodeDir, imageData):
+    @MangaCrawler.update_pbar
+    async def downloadImage(self, episodeStorageUrl, episodeDir, imageData):
         savePath = os.path.join(episodeDir, str(imageData['index']) + '.jpg')
 
         if os.path.exists(savePath):
@@ -147,7 +148,7 @@ class ComicEarthStat(MangaCrawler):
         self.downloadImageData(imageUrl, savePath, a3fData)
 
 
-    def download(self, info):
+    async def download(self, info):
         episodeDir = self.mkEpisodeDir(self.saveDir, 
             info['title'], info['episode'])
         imageData = self.getEpisodeImages(info['raw']['url'])
@@ -157,12 +158,19 @@ class ComicEarthStat(MangaCrawler):
         episodeStorageUrl = imageData['episodeStorageInfoUrl']
         images = imageData['data']
 
-        for i in self.tqdm.trange(len(images['configuration']['contents']), ncols=75, unit='page'):
-        # for image in images['configuration']['contents']:
-            image = images['configuration']['contents'][i]
-            extendData = images[image['original-file-path']]
-            image['extend'] = extendData
-            self.downloadImage(episodeStorageUrl, episodeDir, image)
+
+        with self.tqdm.tqdm(total=len(images['configuration']['contents']), ncols=75, unit='page') as pbar:
+            self.pbar = pbar
+            tasks = []
+            # for i in range(len(images['configuration']['contents'])):
+                # image = images['configuration']['contents'][i]
+            for image in images['configuration']['contents']:
+                extendData = images[image['original-file-path']]
+                image['extend'] = extendData
+                task = asyncio.ensure_future(self.downloadImage(episodeStorageUrl, episodeDir, image))
+                tasks.append(task)
+            await asyncio.gather(*tasks)
+            self.pbar = None
 
 
     def getInfo(self, url):
