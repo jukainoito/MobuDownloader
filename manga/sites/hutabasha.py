@@ -138,19 +138,19 @@ class HutabashaWeblish(MangaCrawler):
         baseA = webKey + mangaKey + '/' + mangaKey + '_'
 
         episodes = [{
-            "episode": episodeTitle,
-            "pageSize": int(pageSize),
-            "raw": {
-                "url": url,
-                "size": int(pageSize),
-                "uid": uid,
-                "base_a": baseA,
-                "image_key": imageKey
+            'episode': episodeTitle,
+            'pageSize': int(pageSize),
+            'raw': {
+                'url': url,
+                'size': int(pageSize),
+                'uid': uid,
+                'base_a': baseA,
+                'image_key': imageKey
             }
         }]
         return {
-            "title": title,
-            "episodes": episodes
+            'title': title,
+            'episodes': episodes
         }
 
     @staticmethod
@@ -217,8 +217,8 @@ class HutabashaWeblish(MangaCrawler):
             episodes.append(episodeInfo)
 
         return {
-            "title": title,
-            "episodes": episodes
+            'title': title,
+            'episodes': episodes
         }
 
     def getEpisodeImages(self, url):
@@ -261,9 +261,9 @@ class HutabashaWeblish(MangaCrawler):
                     im = Image.open(Bytes2Data(imageResp.content))
                     width, height = im.size
                     images.append({
-                        "x": x*480,
-                        "y": prePosY,
-                        "data": im
+                        'x': x*480,
+                        'y': prePosY,
+                        'data': im
                     })
                     prePosX = x * 480 + width
                     prePosY = prePosY + height
@@ -275,24 +275,23 @@ class HutabashaWeblish(MangaCrawler):
             if y == 0:
                 break
             x += 1
-        image = Image.new("RGB", (maxPosX, maxPosY))
+        image = Image.new('RGB', (maxPosX, maxPosY))
         for img in images:
             image.paste(img['data'], (img['x'], img['y']))
         if len(images) != 0:
             image.save(savePath)
 
     async def download(self, info):
-        episodeDir = self.mkEpisodeDir(self.saveDir, 
-            info['title'], info['episode'])
+        episodeDir = self.mkEpisodeDir(self.saveDir, info['title'], info['episode'])
 
         with self.tqdm.tqdm(total=info['raw']['size'], ncols=75, unit='page') as pbar:
             self.pbar = pbar
             tasks = []
         # for i in self.tqdm.trange(info['raw']['size'], ncols=75, unit='page'):
-            for i in range(info['raw']['size']):
-                imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
-                task = asyncio.ensure_future(self.downloadImage(info['raw'], i + 1, imageSavePath))
-                tasks.append(task)
+        for i in range(info['raw']['size']):
+            imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
+            task = asyncio.ensure_future(self.downloadImage(info['raw'], i + 1, imageSavePath))
+            tasks.append(task)
             await asyncio.gather(*tasks)
             self.pbar = None
 

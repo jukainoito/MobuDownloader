@@ -29,7 +29,7 @@ class MangaPoke(MangaCrawler):
         },
     }
 
-    EPISODES_URL = "https://pocket.shonenmagazine.com/api/viewer/readable_products"
+    EPISODES_URL = 'https://pocket.shonenmagazine.com/api/viewer/readable_products'
 
     def getInfo(self, url):
         page = self.webGet(url)
@@ -39,9 +39,9 @@ class MangaPoke(MangaCrawler):
         episode_title = ''.join(html.xpath(self.xpath['cur_episode']['title']))
         episode_id = self.getEpisodeId(url)
         return {
-            "isEpisode": True,
-            "title": ''.join(html.xpath(self.xpath['title'])),
-            "episodes": self.getEpisodes(url, curEpisode={
+            'isEpisode': True,
+            'title': ''.join(html.xpath(self.xpath['title'])),
+            'episodes': self.getEpisodes(url, curEpisode={
                 'title': episode_title,
                 'id': episode_id,
                 'url': url
@@ -54,24 +54,24 @@ class MangaPoke(MangaCrawler):
     def getEpisodes(self, url, curEpisode=None):
         episodes = []
         params = {
-            "current_readable_product_id": self.getEpisodeId(url),
-            "number_since": 250,
-            "number_until": -1,
-            "read_more_num": 250,
-            "type": "episode"
+            'current_readable_product_id': self.getEpisodeId(url),
+            'number_since': 250,
+            'number_until': -1,
+            'read_more_num': 250,
+            'type': 'episode'
         }
         r = self.webGet(self.EPISODES_URL, params=params)
-        html = r.json()["html"]
+        html = r.json()['html']
         html = etree.HTML(html)
         free_episodes = html.xpath('//*[@class="test-readable-product-is-free series-episode-list-is-free"]/../..')
         for episode in free_episodes:
-            episoodeUrl = ''.join(episode.xpath("@href"))
+            episoodeUrl = ''.join(episode.xpath('@href'))
             title = ''.join(episode.xpath('./div[2]/h4/text()'))
             episodeInfo = {
-                "episode": title,
-                "pageSize": "",
-                "raw": {
-                    "url": episoodeUrl
+                'episode': title,
+                'pageSize': '',
+                'raw': {
+                    'url': episoodeUrl
                 }
             }
             if curEpisode is not None and title == curEpisode['title']:
@@ -131,14 +131,13 @@ class MangaPoke(MangaCrawler):
 
 
     def getDownloadEpisodeData(self, info):
-        images = self.getEpisodeImages(info["raw"]["url"])
+        images = self.getEpisodeImages(info['raw']['url'])
         info['pageSize'] = len(images)
         info['raw']['images'] = images
         return info
 
     async def download(self, info):
-        episodeDir = self.mkEpisodeDir(self.saveDir, 
-            info['title'], info['episode'])
+        episodeDir = self.mkEpisodeDir(self.saveDir, info['title'], info['episode'])
         info = self.getDownloadEpisodeData(info)
 
         # for i in self.tqdm.trange(len(info['raw']['images']), ncols=75, unit='page'):

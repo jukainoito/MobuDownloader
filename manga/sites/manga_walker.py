@@ -11,6 +11,7 @@ import os
 from lxml import etree
 
 import logging
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -32,14 +33,16 @@ class MangaWalker(MangaCrawler):
         scriptStr = ''.join(html.xpath('/html/head/script[1]/text()'))
         jsonData = scriptStr[scriptStr.find('['): scriptStr.rfind(']')+1]
         episodeInfo = json.loads(jsonData)
-        title = episodeInfo[0]["content_title"]
-        episodes = list(map(lambda episode: {"episode": episode["episode_title"],
-                                             "pageSize": "", "raw": episode}, episodeInfo))
+        logging.info(episodeInfo)
+        title = episodeInfo[0]['content_title']
+        episodeInfo[0]['url'] = url
+        episodes = list(map(lambda episode: {'episode': episode['episode_title'],
+                                             'pageSize': '', 'raw': episode}, episodeInfo))
         return {
-            "title": title,
-            "episodes": episodes,
-            "extend": {
-                "content_id": episodeInfo[0]["contentID"]
+            'title': title,
+            'episodes': episodes,
+            'extend': {
+                'content_id': episodeInfo[0]['contentID']
             }
         }
 
@@ -56,17 +59,17 @@ class MangaWalker(MangaCrawler):
             episodeTitle = ''.join(episode.xpath(self.xpath['episode_title']))
             episodeUrl = ''.join(episode.xpath(self.xpath['episode_url']))
             episodes.append({
-                "episode": episodeTitle,
-                "pageSize": "", "raw": {
-                    "url": episodeUrl,
-                    "episode_id": re.match(".*cid=([A-Za-z0-9_]*)", episodeUrl).group(1)
+                'episode': episodeTitle,
+                'pageSize': '', 'raw': {
+                    'url': episodeUrl,
+                    'episode_id': re.match('.*cid=([A-Za-z0-9_]*)', episodeUrl).group(1)
                 }
             })
         return {
-            "title": title,
-            "episodes": episodes,
-            "extend": {
-                "content_id": re.match(".*/([^/]+)/?$", url).group(1)
+            'title': title,
+            'episodes': episodes,
+            'extend': {
+                'content_id': re.match('.*/([^/]+)/?$', url).group(1)
             }
         }
 
@@ -101,7 +104,7 @@ class MangaWalker(MangaCrawler):
             return
 
         logger.info('Dwonload image from: {} to : {}'.format(imageInfo['meta']['source_url'], savePath))
-        
+
         imageData = self.webGet(imageInfo['meta']['source_url'])
 
         key = bytearray(imageKey)
@@ -113,8 +116,7 @@ class MangaWalker(MangaCrawler):
         self.saveImage(savePath, data)
 
     async def download(self, info):
-        episodeDir = self.mkEpisodeDir(self.saveDir, 
-            info['title'], info['episode'])
+        episodeDir = self.mkEpisodeDir(self.saveDir, info['title'], info['episode'])
         imageData = self.getImageData(info['raw']['episode_id'])
         info['raw']['images'] = imageData
         info['pageSize'] = len(imageData)
@@ -124,7 +126,6 @@ class MangaWalker(MangaCrawler):
             self.pbar = pbar
             tasks = []
             for imageInfo in imageData:
-                imageInfo = imageData[i]
                 task = asyncio.ensure_future(self.downloadImage(imageInfo, episodeDir))
                 tasks.append(task)
             await asyncio.gather(*tasks)

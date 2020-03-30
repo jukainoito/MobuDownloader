@@ -7,7 +7,7 @@ from lxml import etree
 import math
 from PIL import Image
 
-from urllib import parse 
+from urllib import parse
 
 from io import BytesIO as Bytes2Data
 
@@ -60,7 +60,7 @@ class ComicEarthStat(MangaCrawler):
         findRes = pattern.findall(url)
         if len(findRes) == 0:
             return
-        
+
         jsonUrl = findRes[0][0] + '.json'
         jsonUrl = jsonUrl.replace('detail', 'json/contents/detail')
 
@@ -72,9 +72,9 @@ class ComicEarthStat(MangaCrawler):
         episodes = []
         for episodeRaw in mangaInfo['episodes']:
             temp = {
-                "episode": episodeRaw['comic_episode_title'],
-                "pageSize": "",
-                "raw": episodeRaw
+                'episode': episodeRaw['comic_episode_title'],
+                'pageSize': '',
+                'raw': episodeRaw
             }
             temp['raw']['url'] = temp['raw']['page_url']
             if nowEpisodeTitle is not None and nowEpisodeTitle == temp['episode']:
@@ -92,8 +92,8 @@ class ComicEarthStat(MangaCrawler):
         r = self.webGet(imagesApiUrl)
         imageData = r.json()
         return {
-            "episodeStorageInfoUrl": episodeStorageInfo['url'],
-            "data": imageData
+            'episodeStorageInfoUrl': episodeStorageInfo['url'],
+            'data': imageData
         }
 
     def downloadImageData(self, url, savePath, a3fData):
@@ -106,8 +106,8 @@ class ComicEarthStat(MangaCrawler):
         newIm = im.copy()
         for data in a3fData:
             imageArea = im.crop((data['destX'], data['destY'],
-                                  data['destX'] + data['width'],
-                                  data['destY'] + data['height']))
+                                 data['destX'] + data['width'],
+                                 data['destY'] + data['height']))
             newIm.paste(imageArea, (data['srcX'], data['srcY']))
         newIm.save(savePath)
 
@@ -134,7 +134,7 @@ class ComicEarthStat(MangaCrawler):
         no = imageData['extend']['FileLinkInfo']['PageLinkInfoList'][0]['Page']['No']
         no = str(no)
         imageUrl = episodeStorageUrl + imageData['original-file-path'] + '/' + no + '.jpeg'
-        
+
         logger.info('Dwonload image from: {} to : {}'.format(imageUrl, savePath))
 
         pageData = imageData['extend']['FileLinkInfo']['PageLinkInfoList'][0]['Page']
@@ -149,8 +149,7 @@ class ComicEarthStat(MangaCrawler):
 
 
     async def download(self, info):
-        episodeDir = self.mkEpisodeDir(self.saveDir, 
-            info['title'], info['episode'])
+        episodeDir = self.mkEpisodeDir(self.saveDir, info['title'], info['episode'])
         imageData = self.getEpisodeImages(info['raw']['url'])
         info['images'] = imageData['data']
         info['pageSize'] = len(imageData['data']['configuration']['contents'])
@@ -163,7 +162,7 @@ class ComicEarthStat(MangaCrawler):
             self.pbar = pbar
             tasks = []
             # for i in range(len(images['configuration']['contents'])):
-                # image = images['configuration']['contents'][i]
+            # image = images['configuration']['contents'][i]
             for image in images['configuration']['contents']:
                 extendData = images[image['original-file-path']]
                 image['extend'] = extendData
@@ -174,14 +173,14 @@ class ComicEarthStat(MangaCrawler):
 
 
     def getInfo(self, url):
-        if re.search("//(www.)?comic-earthstar.jp", url) is not None:
+        if re.search('//(www.)?comic-earthstar.jp', url) is not None:
             logger.info('Type: Manga')
 
             episodes = self.getMangaInfo(url)
             episodes['isEpisode'] = False
         else:
             logger.info('Type: Episode')
-            
+
             episodes = self.getEpisodeInfo(url)
             episodes['isEpisode'] = True
         return episodes
@@ -238,12 +237,12 @@ class ComicEarthStat(MangaCrawler):
             k = h * b
             m = l * e
             v.append({
-                "srcX": k,
-                "srcY": m,
-                "destX": k,
-                "destY": m,
-                "width": a,
-                "height": f
+                'srcX': k,
+                'srcY': m,
+                'destX': k,
+                'destY': m,
+                'width': a,
+                'height': f
             })
 
         if 0 < f:
@@ -255,12 +254,12 @@ class ComicEarthStat(MangaCrawler):
                 k = self.calcPositionWithRest_(t, h, a, b)
                 m = l * e
                 v.append({
-                    "srcX": k,
-                    "srcY": m,
-                    "destX": p,
-                    "destY": r,
-                    "width": b,
-                    "height": f
+                    'srcX': k,
+                    'srcY': m,
+                    'destX': p,
+                    'destY': r,
+                    'width': b,
+                    'height': f
                 })
         if 0 < a:
             for q in range(g):
@@ -271,12 +270,12 @@ class ComicEarthStat(MangaCrawler):
                 k = h * b
                 m = self.calcPositionWithRest_(q, l, f, e)
                 v.append({
-                    "srcX": k,
-                    "srcY": m,
-                    "destX": p,
-                    "destY": r,
-                    "width": a,
-                    "height": e
+                    'srcX': k,
+                    'srcY': m,
+                    'destX': p,
+                    'destY': r,
+                    'width': a,
+                    'height': e
                 })
 
         for t in range(c):
@@ -290,11 +289,11 @@ class ComicEarthStat(MangaCrawler):
                 k = t * b + (a if (t >= h) else 0)
                 m = q * e + (f if (q >= l) else 0)
                 v.append({
-                    "srcX": k,
-                    "srcY": m,
-                    "destX": p,
-                    "destY": r,
-                    "width": b,
-                    "height": e
+                    'srcX': k,
+                    'srcY': m,
+                    'destX': p,
+                    'destY': r,
+                    'width': b,
+                    'height': e
                 })
         return v

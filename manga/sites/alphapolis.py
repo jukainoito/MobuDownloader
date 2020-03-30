@@ -42,16 +42,16 @@ class AlifaPolis(MangaCrawler):
         images = self.parseImages(jsContent)
 
         episodes = [{
-            "episode": episodeTitle,
-            "pageSize": len(images),
-            "raw": {
-                "url": url,
+            'episode': episodeTitle,
+            'pageSize': len(images),
+            'raw': {
+                'url': url,
                 'images': images
             }
         }]
         return {
-            "title": title,
-            "episodes": episodes
+            'title': title,
+            'episodes': episodes
         }
 
     def getMangaInfo(self, url):
@@ -67,14 +67,14 @@ class AlifaPolis(MangaCrawler):
             episodeTitle = ''.join(episode.xpath(self.xpath['episode_title']))
             episodeUrl = ''.join(episode.xpath(self.xpath['episode_url']))
             episodes.append({
-                "episode": episodeTitle,
-                "pageSize": "", "raw": {
-                    "url": self.domainUrl + episodeUrl
+                'episode': episodeTitle,
+                'pageSize': '', 'raw': {
+                    'url': self.domainUrl + episodeUrl
                 }
             })
         return {
-            "title": title,
-            "episodes": episodes
+            'title': title,
+            'episodes': episodes
         }
 
     def getEpisodeImages(self, url):
@@ -92,7 +92,7 @@ class AlifaPolis(MangaCrawler):
         open(savePath, 'wb').write(data)
 
     @MangaCrawler.update_pbar
-    async def downloadImage(self, imageUrl, savePath):        
+    async def downloadImage(self, imageUrl, savePath):
         if not os.path.exists(savePath):
             logger.info('Dwonload image from: {} to : {}'.format(imageUrl, savePath))
 
@@ -100,8 +100,7 @@ class AlifaPolis(MangaCrawler):
             self.saveImage(savePath, image.content)
 
     async def download(self, info):
-        episodeDir = self.mkEpisodeDir(self.saveDir, 
-            info['title'], info['episode'])
+        episodeDir = self.mkEpisodeDir(self.saveDir, info['title'], info['episode'])
 
         if 'images' not in info['raw'].keys():
             images = self.getEpisodeImages(info['raw']['url'])
@@ -114,14 +113,13 @@ class AlifaPolis(MangaCrawler):
             self.pbar = pbar
             tasks = []
         # for i in self.tqdm.trange(len(images), ncols=75, unit='page'):
-            for i in range(len(images)):
-                imageUrl = images[i]
-                imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
-                task = asyncio.ensure_future(self.downloadImage(imageUrl, imageSavePath))
-                tasks.append(task)
+        for i in range(len(images)):
+            imageUrl = images[i]
+            imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
+            task = asyncio.ensure_future(self.downloadImage(imageUrl, imageSavePath))
+            tasks.append(task)
             await asyncio.gather(*tasks)
             self.pbar = None
-        
 
     def getInfo(self, url):
         episodes = None

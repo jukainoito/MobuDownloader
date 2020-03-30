@@ -23,7 +23,7 @@ class WebMedu(MangaCrawler):
     }
 
     def getEpisodeInfo(self, url):
-        
+
         r = self.webGet(url)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
@@ -34,15 +34,15 @@ class WebMedu(MangaCrawler):
         episodeTitle = ''.join(html.xpath(self.xpath['cur_episode_title']))
 
         episodes = [{
-            "episode": episodeTitle,
-            "pageSize": "",
-            "raw": {
-                "url": url
+            'episode': episodeTitle,
+            'pageSize': '',
+            'raw': {
+                'url': url
             }
         }]
         return {
-            "title": title,
-            "episodes": episodes
+            'title': title,
+            'episodes': episodes
         }
 
     def getMangaInfo(self, url):
@@ -59,14 +59,14 @@ class WebMedu(MangaCrawler):
             episodeTitle = ''.join(episode.xpath(self.xpath['episode_title']))
             episodeUrl = ''.join(episode.xpath(self.xpath['episode_url']))
             episodes.append({
-                "episode": episodeTitle,
-                "pageSize": "", "status": "", "raw": {
-                    "url": self.domainUrl + episodeUrl
+                'episode': episodeTitle,
+                'pageSize': '', 'status': '', 'raw': {
+                    'url': self.domainUrl + episodeUrl
                 }
             })
         return {
-            "title": title,
-            "episodes": episodes
+            'title': title,
+            'episodes': episodes
         }
 
     def getEpisodeImages(self, url):
@@ -81,7 +81,7 @@ class WebMedu(MangaCrawler):
         down_episodes = []
         for episode in data['episodes']:
             if episode['sel']:
-                (title, images) = self.get_episode_images(episode["raw"]["url"])
+                (title, images) = self.get_episode_images(episode['raw']['url'])
                 episode['pageSize'] = len(images)
                 episode['raw']['images'] = images
                 episode['episode'] = title
@@ -93,7 +93,7 @@ class WebMedu(MangaCrawler):
         open(savePath, 'wb').write(data)
 
     @MangaCrawler.update_pbar
-    async def downloadImage(self, imageUrl, savePath):        
+    async def downloadImage(self, imageUrl, savePath):
         if os.path.exists(savePath):
             return
 
@@ -103,9 +103,8 @@ class WebMedu(MangaCrawler):
         self.saveImage(savePath, image.content)
 
     async def download(self, info):
-        
-        episodeDir = self.mkEpisodeDir(self.saveDir, 
-            info['title'], info['episode'])
+
+        episodeDir = self.mkEpisodeDir(self.saveDir, info['title'], info['episode'])
         episodeTitle, imageData = self.getEpisodeImages(info['raw']['url'])
         info['raw']['images'] = imageData
         info['raw']['episode'] = episodeTitle
@@ -124,7 +123,7 @@ class WebMedu(MangaCrawler):
 
 
     def getInfo(self, url):
-        if re.search(".*/wk/.*", url):
+        if re.search('.*/wk/.*', url):
             logger.info('Type: Manga')
 
             episodes = self.getMangaInfo(url)

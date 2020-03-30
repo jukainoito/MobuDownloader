@@ -9,17 +9,17 @@ from .hutabasha import HutabashaWeblish
 from .alphapolis import AlifaPolis
 
 sites = {
-    "pocket.shonenmagazine.com": MangaPoke,
-    "comic-walker.com": MangaWalker,
-    "web-ace.jp": WebAce,
-    "cycomi.com": Cycomi,
-    "viewer.comic-earthstar.jp": ComicEarthStat,
-    "www.comic-earthstar.jp": ComicEarthStat,
-    "comic-earthstar.jp": ComicEarthStat,
-    "www.comic-medu.com": WebMedu,
-    "futabasha.pluginfree.com": HutabashaWeblish,
-    "webaction.jp": HutabashaWeblish,
-    "www.alphapolis.co.jp": AlifaPolis
+    'pocket.shonenmagazine.com': MangaPoke,
+    'comic-walker.com': MangaWalker,
+    'web-ace.jp': WebAce,
+    'cycomi.com': Cycomi,
+    'viewer.comic-earthstar.jp': ComicEarthStat,
+    'www.comic-earthstar.jp': ComicEarthStat,
+    'comic-earthstar.jp': ComicEarthStat,
+    'www.comic-medu.com': WebMedu,
+    'futabasha.pluginfree.com': HutabashaWeblish,
+    'webaction.jp': HutabashaWeblish,
+    'www.alphapolis.co.jp': AlifaPolis
 }
 
 def isSupportSite(site):

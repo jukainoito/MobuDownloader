@@ -45,11 +45,10 @@ class WebAce(MangaCrawler):
         self.saveImage(savePath, image.content)
 
     async def download(self, info):
-        episodeDir = self.mkEpisodeDir(self.saveDir, 
-            info['title'], info['episode'])
+        episodeDir = self.mkEpisodeDir(self.saveDir, info['title'], info['episode'])
         imageData = self.getEpisodeImages(info['raw']['url'])
         info['raw']['images'] = imageData
-        
+
         # for i in self.tqdm.trange(len(imageData), ncols=75, unit='page'):
         with self.tqdm.tqdm(total=len(imageData), ncols=75, unit='page') as pbar:
             self.pbar = pbar
@@ -64,7 +63,7 @@ class WebAce(MangaCrawler):
 
 
     def getMangaInfo(self, url):
-        if re.search("episode/+$", url) is None:
+        if re.search('episode/+$', url) is None:
             url = url + '/episode/'
 
         r = self.webGet(url)
@@ -82,19 +81,19 @@ class WebAce(MangaCrawler):
                 continue
             episodeUrl = ''.join(episode.xpath(self.xpath['episode_url']))
             episodes.append({
-                "episode": episodeTitle,
-                "pageSize": "", "raw": {
-                    "url": self.domainUrl + episodeUrl
+                'episode': episodeTitle,
+                'pageSize': '', 'raw': {
+                    'url': self.domainUrl + episodeUrl
                 }
             })
         return {
-            "title": title,
-            "episodes": episodes
+            'title': title,
+            'episodes': episodes
         }
 
 
     def getEpisodeInfo(self, url):
-        
+
         r = self.webGet(url)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
@@ -105,19 +104,19 @@ class WebAce(MangaCrawler):
         episode_title = ''.join(html.xpath(self.xpath['cur_episode_title']))
 
         episodes = [{
-            "episode": episode_title,
-            "pageSize": "",
-            "raw": {
-                "url": url
+            'episode': episode_title,
+            'pageSize': '',
+            'raw': {
+                'url': url
             }
         }]
         return {
-            "title": title,
-            "episodes": episodes
+            'title': title,
+            'episodes': episodes
         }
 
     def getInfo(self, url):
-        if re.search("/+episode/+\\d+/*$", url) is None:
+        if re.search('/+episode/+\\d+/*$', url) is None:
             logger.info('Type: Manga')
 
             episodes = self.getMangaInfo(url)

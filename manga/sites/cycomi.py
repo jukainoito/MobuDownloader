@@ -34,15 +34,15 @@ class Cycomi(MangaCrawler):
         episodeTitle = ''.join(html.xpath(self.xpath['cur_episode_title']))
         episodeTitle = episodeTitle.replace(' - ', '')
         episodes = [{
-            "episode": episodeTitle,
-            "pageSize": "",
-            "raw": {
-                "url": url
+            'episode': episodeTitle,
+            'pageSize': '',
+            'raw': {
+                'url': url
             }
         }]
         return {
-            "title": title,
-            "episodes": episodes
+            'title': title,
+            'episodes': episodes
         }
 
     def getMangaInfo(self, url):
@@ -60,14 +60,14 @@ class Cycomi(MangaCrawler):
             if len(episodeTitle) == 0:
                 continue
             episodeUrl = ''.join(episode.xpath(self.xpath['episode_url']))
-            episodes.append({"episode": episodeTitle,
-                "pageSize": "", "raw": {
-                    "url": self.domainUrl + episodeUrl
-                }
-            })
+            episodes.append({'episode': episodeTitle,
+                             'pageSize': '', 'raw': {
+                                 'url': self.domainUrl + episodeUrl
+                             }
+                             })
         return {
-            "title": title,
-            "episodes": episodes
+            'title': title,
+            'episodes': episodes
         }
 
     def getEpisodeImages(self, url):
@@ -93,8 +93,7 @@ class Cycomi(MangaCrawler):
         self.saveImage(savePath, image.content)
 
     async def download(self, info):
-        episodeDir = self.mkEpisodeDir(self.saveDir, 
-            info['title'], info['episode'])
+        episodeDir = self.mkEpisodeDir(self.saveDir, info['title'], info['episode'])
         imageData = self.getEpisodeImages(info['raw']['url'])
         info['raw']['images'] = imageData
 
@@ -103,11 +102,11 @@ class Cycomi(MangaCrawler):
             self.pbar = pbar
             tasks = []
         # for i in self.tqdm.trange(len(imageData), ncols=75, unit='page'):
-            for i in range(len(imageData)):
-                imageUrl = imageData[i]
-                imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
-                task = asyncio.ensure_future(self.downloadImage(imageUrl, imageSavePath))
-                tasks.append(task)
+        for i in range(len(imageData)):
+            imageUrl = imageData[i]
+            imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
+            task = asyncio.ensure_future(self.downloadImage(imageUrl, imageSavePath))
+            tasks.append(task)
             await asyncio.gather(*tasks)
             self.pbar = None
 
