@@ -4,6 +4,7 @@ from .manga_crawler import MangaCrawler
 import re
 import os
 from lxml import etree
+import asyncio
 
 import logging
 

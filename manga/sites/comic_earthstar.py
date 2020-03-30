@@ -10,6 +10,7 @@ from PIL import Image
 from urllib import parse
 
 from io import BytesIO as Bytes2Data
+import asyncio
 
 import logging
 
@@ -34,7 +35,7 @@ class ComicEarthStat(MangaCrawler):
             return None
         cid = cid[0]
         infoApiUrl = self.episodeInfoApiUrl + '?cid='+cid
-        r = self.webGet(infoApiUrl)
+        r = self.webGet(infoApiUrl, scheme='https')
         episodeInfo = r.json()
 
         return episodeInfo
@@ -64,7 +65,7 @@ class ComicEarthStat(MangaCrawler):
         jsonUrl = findRes[0][0] + '.json'
         jsonUrl = jsonUrl.replace('detail', 'json/contents/detail')
 
-        r = self.webGet(jsonUrl)
+        r = self.webGet(jsonUrl, scheme='https')
         r.encoding = 'utf-8'
         mangaInfo = r.json()
         title = mangaInfo['categorys']['comic_category_title']
@@ -89,7 +90,8 @@ class ComicEarthStat(MangaCrawler):
     def getEpisodeImages(self, url):
         episodeStorageInfo = self.getEpisodeStorageInfo(url)
         imagesApiUrl = episodeStorageInfo['url'] + 'configuration_pack.json'
-        r = self.webGet(imagesApiUrl)
+
+        r = self.webGet(imagesApiUrl, scheme='https')
         imageData = r.json()
         return {
             'episodeStorageInfoUrl': episodeStorageInfo['url'],
@@ -97,7 +99,7 @@ class ComicEarthStat(MangaCrawler):
         }
 
     def downloadImageData(self, url, savePath, a3fData):
-        r = self.webGet(url)
+        r = self.webGet(url, scheme='https')
         self.handleImage(r.content, savePath, a3fData)
 
     @staticmethod

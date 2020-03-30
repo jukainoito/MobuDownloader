@@ -55,7 +55,7 @@ class AlifaPolis(MangaCrawler):
         }
 
     def getMangaInfo(self, url):
-        r = self.webGett(url)
+        r = self.webGet(url)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
 
@@ -113,11 +113,11 @@ class AlifaPolis(MangaCrawler):
             self.pbar = pbar
             tasks = []
         # for i in self.tqdm.trange(len(images), ncols=75, unit='page'):
-        for i in range(len(images)):
-            imageUrl = images[i]
-            imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
-            task = asyncio.ensure_future(self.downloadImage(imageUrl, imageSavePath))
-            tasks.append(task)
+            for i in range(len(images)):
+                imageUrl = images[i]
+                imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
+                task = asyncio.ensure_future(self.downloadImage(imageUrl, imageSavePath))
+                tasks.append(task)
             await asyncio.gather(*tasks)
             self.pbar = None
 

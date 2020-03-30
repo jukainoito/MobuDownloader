@@ -9,6 +9,7 @@ import re
 
 from io import BytesIO as Bytes2Data
 
+import asyncio
 
 import logging
 

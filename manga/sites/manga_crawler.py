@@ -13,6 +13,8 @@ from functools import wraps
 import urllib3
 urllib3.disable_warnings()
 
+from urllib import parse
+
 import asyncio
 
 class MangaCrawler:
@@ -63,7 +65,11 @@ class MangaCrawler:
             return result
         return wrapper
 
-    def webGet(self, url, params=None):
+    def webGet(self, url, params=None, scheme=None):
+        if scheme is not None:
+            urlParse = parse.urlparse(url)
+            if len(urlParse.scheme) == 0:
+                url = parse.urlunparse(urlParse._replace(scheme='https'))
         return self.session.get(url, params=params, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
 
 

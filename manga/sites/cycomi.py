@@ -3,6 +3,7 @@
 from .manga_crawler import MangaCrawler
 import os
 from lxml import etree
+import asyncio
 
 import logging
 
@@ -102,11 +103,11 @@ class Cycomi(MangaCrawler):
             self.pbar = pbar
             tasks = []
         # for i in self.tqdm.trange(len(imageData), ncols=75, unit='page'):
-        for i in range(len(imageData)):
-            imageUrl = imageData[i]
-            imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
-            task = asyncio.ensure_future(self.downloadImage(imageUrl, imageSavePath))
-            tasks.append(task)
+            for i in range(len(imageData)):
+                imageUrl = imageData[i]
+                imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
+                task = asyncio.ensure_future(self.downloadImage(imageUrl, imageSavePath))
+                tasks.append(task)
             await asyncio.gather(*tasks)
             self.pbar = None
 

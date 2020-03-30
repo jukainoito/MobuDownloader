@@ -8,6 +8,7 @@ from PIL import Image
 
 from io import BytesIO as Bytes2Data
 
+import asyncio
 
 import logging
 
