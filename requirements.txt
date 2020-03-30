@@ -1,6 +1,7 @@
-PySocks>=1.7.1
-lxml>=4.5.0
-Pillow>=7.0.0
-PyYAML>=5.3
-requests>=2.23.0
-tqdm>=4.43.0
+PySocks
+lxml
+Pillow
+PyYAML
+requests
+tqdm
+six

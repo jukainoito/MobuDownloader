@@ -4,7 +4,6 @@ from .manga_crawler import MangaCrawler
 from lxml import etree
 from PIL import Image
 import os
-import threadpool
 import re
 
 from io import BytesIO as Bytes2Data
