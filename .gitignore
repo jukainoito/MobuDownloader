@@ -10,3 +10,4 @@ __pycache__
 run.log
 /download
 *.swp
+venv

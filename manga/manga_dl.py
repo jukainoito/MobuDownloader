@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 from tqdm import tqdm
 
 import asyncio
+
+
 class MangaDownloader(object):
     def __init__(self, sitesConfig, saveDir):
         self.saveDir = saveDir
@@ -23,9 +25,14 @@ class MangaDownloader(object):
 
     def initCookies(self):
         for site in sites.keys():
+            if site not in self.config:
+                self.config[site] = {
+                    'proxy': None,
+                    'cookies_file': None
+                }
             if self.config[site]['cookies_file'] is not None:
                 self.config[site]['cookies'] = self.loadCookies(self.config[site]['cookies_file'], site)
-            else :
+            else:
                 self.config[site]['cookies'] = None
 
     def loadCookies(self, cookiesFilePath, domain=None):
@@ -40,7 +47,7 @@ class MangaDownloader(object):
                             if domain == None or obj['domain'] == ('.' + domain):
                                 cookies[obj['name']] = obj['value']
         except Exception:
-            logger.error('Faild to load cookies file {}'.format(cookiesFilePath),exc_info = True)
+            logger.error('Faild to load cookies file {}'.format(cookiesFilePath), exc_info=True)
         finally:
             if f:
                 f.close()
@@ -73,8 +80,9 @@ class MangaDownloader(object):
             info['site'] = self.getSite(url)
             logger.debug('url info: {}'.format(info))
             return info
-        except:
+        except Exception as e:
             print('Parse error: {} '.format(url))
+            raise e
             sys.exit(-1)
 
         '''
@@ -84,8 +92,10 @@ class MangaDownloader(object):
             'url': page url|string,
             }
         '''
+
     def download(self, site, info):
-        logger.info('Start download title: {}  episode: {} url: {}'.format(info['title'], info['episode'], info['raw']['url']))
+        logger.info(
+            'Start download title: {}  episode: {} url: {}'.format(info['title'], info['episode'], info['raw']['url']))
         mangaDL = self.manga[site]
         print('Downloading: {} - {}'.format(info['title'], info['episode']))
         asyncio.run(mangaDL.download(info))

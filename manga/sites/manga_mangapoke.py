@@ -19,6 +19,8 @@ class MangaPoke(MangaCrawler):
 
     xpath = {
         'title': '//*[@class="series-header-title"]/text()',
+        'series_id': '//*[@class="js-valve"]/@data-giga_series',
+        'episode_id': '//*[@class="js-valve"]/@data-giga_episode',
         'episode_new_open': '//*[@id="page-viewer"]/section[3]/div[2]/div[1]/div/ul[1]/li/a',
         'episode_old_open': '//*[@id="page-viewer"]/section[3]/div[2]/div[1]/ul/li/a',
         'episode_more_url': '//*[@id="page-viewer"]/section[3]/div[2]/div/section/button/@data-read-more-endpoint',
@@ -38,27 +40,38 @@ class MangaPoke(MangaCrawler):
 
         episode_title = ''.join(html.xpath(self.xpath['cur_episode']['title']))
         episode_id = self.getEpisodeId(url)
+        series_id = self.getSeriesId(url, html)
         return {
             'isEpisode': True,
             'title': ''.join(html.xpath(self.xpath['title'])),
-            'episodes': self.getEpisodes(url, curEpisode={
+            'seriesId': series_id,
+            'episodes': self.getEpisodes(url, series_id, curEpisode={
                 'title': episode_title,
                 'id': episode_id,
-                'url': url
+                'url': url,
+                'seriesId': series_id,
             })
         }
 
     def getEpisodeId(self, url):
         return re.search("\\d*$", url).group(0)
 
-    def getEpisodes(self, url, curEpisode=None):
+    def getSeriesId(self, url, html=None):
+        if html is None:
+            page = self.webGet(url)
+            page.encoding = 'utf-8'
+            html = etree.HTML(page.text)
+        return ''.join(html.xpath(self.xpath['series_id']))
+
+    def getEpisodes(self, url, series_id, curEpisode=None):
         episodes = []
         params = {
-            'current_readable_product_id': self.getEpisodeId(url),
+            'aggregate_id': series_id,
             'number_since': 250,
             'number_until': -1,
             'read_more_num': 250,
-            'type': 'episode'
+            'type': 'episode',
+            'is_guest': 1
         }
         r = self.webGet(self.EPISODES_URL, params=params)
         html = r.json()['html']
