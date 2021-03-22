@@ -1,5 +1,4 @@
 # coding:utf-8
-
 import yaml
 
 import argparse
@@ -62,7 +61,7 @@ def readConfigFromYAML(file):
                 globalProxy = getValueOfDict('proxy', yamlConfig)
                 if getValueOfDict('log', yamlConfig) is None:
                     yamlConfig['log'] = DEFAULT_LOG_PATH
-                if yamlConfig['sites'] is None:
+                if 'sites' not in yamlConfig or yamlConfig['sites'] is None:
                     yamlConfig['sites'] = dict()
                 for site in sites.keys():
                     siteConfig = getValueOfDict(site, yamlConfig['sites'])
@@ -76,7 +75,7 @@ def readConfigFromYAML(file):
                             siteConfig['proxy'] = globalProxy
                         if getValueOfDict('cookies_file', siteConfig) is None:
                             siteConfig['cookies_file'] = None
-                    return yamlConfig
+                return yamlConfig
             except yaml.scanner.ScannerError as e:
                 print('YAML file read error, using default')
     yamlConfig = {
@@ -104,7 +103,7 @@ def main():
     logger = logging.getLogger(__name__)
 
     logger.debug('Load config: {}'.format(yamlConfig))
-    manga = MangaDownloader(yamlConfig['sites'], DEFAULT_DOWNLOAD_DIR_PATH)
+    manga = MangaDownloader(yamlConfig['sites'], DEFAULT_DOWNLOAD_DIR_PATH, defaultProxy=yamlConfig['proxy'])
     for url in INPUT_URLS:
        infos = manga.getInfo(url)
        for info in infos['episodes']:

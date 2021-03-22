@@ -17,9 +17,10 @@ import asyncio
 
 
 class MangaDownloader(object):
-    def __init__(self, sitesConfig, saveDir):
+    def __init__(self, sitesConfig, saveDir, defaultProxy=None):
         self.saveDir = saveDir
         self.config = sitesConfig
+        self.defaultProxy = defaultProxy
         self.initCookies()
         self.manga = dict()
 
@@ -27,7 +28,7 @@ class MangaDownloader(object):
         for site in sites.keys():
             if site not in self.config:
                 self.config[site] = {
-                    'proxy': None,
+                    'proxy': self.defaultProxy,
                     'cookies_file': None
                 }
             if self.config[site]['cookies_file'] is not None:
