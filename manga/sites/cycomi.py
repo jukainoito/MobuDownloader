@@ -20,7 +20,7 @@ class Cycomi(MangaCrawler):
         'episode_title': 'div/p[1]/text()',
         'cur_episode_manga_title': '/html/body/header/p/a/text()',
         'cur_episode_title': '/html/body/header/p/text()',
-        'images': '//*[@class="swiper-wrapper"]/div/img/@src'
+        'images': '//*[@class="image-container"]/img/@src'
     }
 
 
@@ -94,6 +94,7 @@ class Cycomi(MangaCrawler):
         self.saveImage(savePath, image.content)
 
     async def download(self, info):
+
         episodeDir = self.mkEpisodeDir(self.saveDir, info['title'], info['episode'])
         imageData = self.getEpisodeImages(info['raw']['url'])
         info['raw']['images'] = imageData

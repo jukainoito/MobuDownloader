@@ -1,27 +1,27 @@
 # coding:utf-8
 
-from .manga_crawler import MangaCrawler
-import re, os
+import logging
+import os
+import re
+import asyncio
+
 from lxml import etree
 
-import logging
+from .manga_crawler import MangaCrawler
 
 logger = logging.getLogger(__name__)
 
-import asyncio
-
 
 class AlifaPolis(MangaCrawler):
-
     domainUrl = 'https://www.alphapolis.co.jp'
     xpath = {
         'title': '//*[@class="title"]/h1/text()',
-        'episodes': '//*[@class="episode"]',
-        'episode_url': '@href',
-        'episode_title': 'div[2]/div[1]/text()',
+        'episodes': '//*[@class="episode-unit"]',
+        'episode_url': '*[@class="abstract"]/object/*[@class="read-episode"]/@href',
+        'episode_title': '*[@class="episode"]/div[2]/div[1]/text()',
         'cur_manga_title': '//*[@class="menu official"]/h1/text()',
         'cur_episode_title': '//*[@class="menu official"]/h2/text()',
-        'cur_images_data': '/html/body/script[2]/text()'
+        'cur_images_data': '/html/body/script[3]/text()'
     }
 
     def parseImages(self, jsContent):
@@ -66,6 +66,8 @@ class AlifaPolis(MangaCrawler):
         for episode in episodesEtree:
             episodeTitle = ''.join(episode.xpath(self.xpath['episode_title']))
             episodeUrl = ''.join(episode.xpath(self.xpath['episode_url']))
+            if len(episodeUrl) == 0:
+                continue
             episodes.append({
                 'episode': episodeTitle,
                 'pageSize': '', 'raw': {
@@ -112,7 +114,7 @@ class AlifaPolis(MangaCrawler):
         with self.tqdm.tqdm(total=len(images), ncols=75, unit='page') as pbar:
             self.pbar = pbar
             tasks = []
-        # for i in self.tqdm.trange(len(images), ncols=75, unit='page'):
+            # for i in self.tqdm.trange(len(images), ncols=75, unit='page'):
             for i in range(len(images)):
                 imageUrl = images[i]
                 imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
