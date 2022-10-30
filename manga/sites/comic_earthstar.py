@@ -3,7 +3,6 @@
 from .manga_crawler import MangaCrawler
 import re
 import os
-from lxml import etree
 import math
 from PIL import Image
 
@@ -16,8 +15,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class ComicEarthStat(MangaCrawler):
 
+class ComicEarthStat(MangaCrawler):
     episodeInfoApiUrl = 'http://api.comic-earthstar.jp/c.php'
     mangaPageUrl = 'https://www.comic-earthstar.jp/detail/'
     xpath = {
@@ -34,7 +33,7 @@ class ComicEarthStat(MangaCrawler):
         if len(cid) == 0:
             return None
         cid = cid[0]
-        infoApiUrl = self.episodeInfoApiUrl + '?cid='+cid
+        infoApiUrl = self.episodeInfoApiUrl + '?cid=' + cid
         r = self.webGet(infoApiUrl, scheme='https')
         episodeInfo = r.json()
 
@@ -149,7 +148,6 @@ class ComicEarthStat(MangaCrawler):
 
         self.downloadImageData(imageUrl, savePath, a3fData)
 
-
     async def download(self, info):
         episodeDir = self.mkEpisodeDir(self.saveDir, info['title'], info['episode'])
         imageData = self.getEpisodeImages(info['raw']['url'])
@@ -158,7 +156,6 @@ class ComicEarthStat(MangaCrawler):
 
         episodeStorageUrl = imageData['episodeStorageInfoUrl']
         images = imageData['data']
-
 
         with self.tqdm.tqdm(total=len(images['configuration']['contents']), ncols=75, unit='page') as pbar:
             self.pbar = pbar
@@ -173,7 +170,6 @@ class ComicEarthStat(MangaCrawler):
             await asyncio.gather(*tasks)
             self.pbar = None
 
-
     def getInfo(self, url):
         if re.search('//(www.)?comic-earthstar.jp', url) is not None:
             logger.info('Type: Manga')
@@ -186,7 +182,6 @@ class ComicEarthStat(MangaCrawler):
             episodes = self.getEpisodeInfo(url)
             episodes['isEpisode'] = True
         return episodes
-
 
     # From http://viewer.comic-earthstar.jp/js/viewer_1.0.1_2017-01-16.js
     @staticmethod

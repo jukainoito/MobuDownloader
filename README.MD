@@ -10,7 +10,7 @@ python main.py [OPTION]... URL...
 ### Config file
 ```yaml
 log: # log file path, default use run.log
-proxy: # global proxy url. example: socks5://127.0.0.1:1080
+proxy: # global proxy url. e.g., socks5://127.0.0.1:1080
 sites: # download site config
   pocket.shonenmagazine.com: # site domain
     proxy: # site use proxy url, default us global proxy url

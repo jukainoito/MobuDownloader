@@ -1,27 +1,26 @@
 # coding:utf-8
 
+import os
+import re
 from abc import ABCMeta, abstractmethod
-import os, re
+from functools import wraps
+from urllib import parse
 
 import requests
+import tqdm
+import urllib3
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
-import tqdm
-from functools import wraps
-
-import urllib3
 urllib3.disable_warnings()
 
-from urllib import parse
-
-import asyncio
 
 class MangaCrawler:
     __metaclass__ = ABCMeta
 
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36'}
+        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/68.0.3440.106 Safari/537.36'}
 
     session = requests.Session()
     retry = Retry(connect=3, backoff_factor=0.5)

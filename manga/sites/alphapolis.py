@@ -19,8 +19,8 @@ class AlifaPolis(MangaCrawler):
         'episodes': '//*[@class="episode-unit"]',
         'episode_url': '*[@class="abstract"]/object/*[@class="read-episode"]/@href',
         'episode_title': '*[@class="episode"]/div[2]/div[1]/text()',
-        'cur_manga_title': '//*[@class="menu official"]/h1/text()',
-        'cur_episode_title': '//*[@class="menu official"]/h2/text()',
+        'cur_manga_title': '//*[@class="postscript"]/h1/text()',
+        'cur_episode_title': '//*[@class="postscript"]/h2/text()',
         'cur_images_data': '/html/body/script[3]/text()'
     }
 
@@ -64,14 +64,14 @@ class AlifaPolis(MangaCrawler):
 
         episodesEtree = html.xpath(self.xpath['episodes'])
         for episode in episodesEtree:
-            episodeTitle = ''.join(episode.xpath(self.xpath['episode_title']))
-            episodeUrl = ''.join(episode.xpath(self.xpath['episode_url']))
+            episodeTitle = ''.join(episode.xpath(self.xpath['episode_title'])).strip()
+            episodeUrl = ''.join(episode.xpath(self.xpath['episode_url'])).strip()
             if len(episodeUrl) == 0:
                 continue
             episodes.append({
                 'episode': episodeTitle,
                 'pageSize': '', 'raw': {
-                    'url': self.domainUrl + episodeUrl
+                    'url': episodeUrl if episodeUrl.startswith('http') else self.domainUrl + episodeUrl
                 }
             })
         return {

@@ -10,8 +10,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class WebMedu(MangaCrawler):
 
+class WebMedu(MangaCrawler):
     domainUrl = 'http://www.comic-medu.com'
     xpath = {
         'title': '//*[@property="og:title"]/@content',
@@ -121,7 +121,6 @@ class WebMedu(MangaCrawler):
                 tasks.append(task)
             await asyncio.gather(*tasks)
             self.pbar = None
-
 
     def getInfo(self, url):
         if re.search('.*/wk/.*', url):

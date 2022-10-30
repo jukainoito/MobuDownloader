@@ -23,4 +23,4 @@ sites = {
 }
 
 def isSupportSite(site):
-    return site in sites.keys();
+    return site in sites.keys()

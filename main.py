@@ -1,22 +1,21 @@
 # coding:utf-8
-import yaml
-
 import argparse
-import sys, os
-
 import logging
+import os
+import sys
+
+import yaml
 
 from manga import sites, MangaDownloader
 
 parser = argparse.ArgumentParser()
-parser.add_argument('urls', nargs='*',  help='input download url')
+parser.add_argument('urls', nargs='*', help='input download url')
 parser.add_argument('-c', '-config', '--config', help='YAML config file', action='store')
 parser.add_argument('-d', '-dir', '--dir', help='download file save to directory path', action='store')
 parser.add_argument('-debug', '--debug', help='debug', action='store_true')
 # parser.add_argument('-g', '-gui', '--gui', help='Use gui', action='store_true')
 parser.add_argument('-a', '-all', '--all', help='download all episodes', action='store_true')
 args = parser.parse_args()
-
 
 PROGRAM_DIR_PATH = os.path.dirname(os.path.abspath(sys.argv[0]))
 DEFAULT_LOG_PATH = os.path.join(PROGRAM_DIR_PATH, 'run.log')
@@ -27,7 +26,6 @@ IS_DEBUG = args.debug
 IS_ALL = args.all
 # IS_GUI = args.gui
 IS_GUI = False
-
 
 YAML_CONFIG_PATH = None
 if args.config is not None:
@@ -40,12 +38,13 @@ if args.dir is not None:
 INPUT_URLS = args.urls
 
 
-
 def getValueOfDict(key, dictData):
     if key in dictData:
         return dictData[key]
     else:
         return None
+
+
 def hasValueOfDict(key, dictData):
     if key in dictData:
         return True
@@ -82,7 +81,7 @@ def readConfigFromYAML(file):
         'log': DEFAULT_LOG_PATH,
         'proxy': None,
         'sites': {}
-        }
+    }
     for site in sites.keys():
         yamlConfig['sites'][site] = {
             'proxy': None,
@@ -90,23 +89,23 @@ def readConfigFromYAML(file):
         }
     return yamlConfig
 
+
 def main():
     yamlConfig = readConfigFromYAML(YAML_CONFIG_PATH)
 
-
     global logger
 
-    logging.basicConfig(level = logging.DEBUG if IS_DEBUG else logging.INFO,
-            filename=None if IS_DEBUG else yamlConfig['log'], filemode='a',
-            format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=logging.DEBUG if IS_DEBUG else logging.INFO,
+                        filename=None if IS_DEBUG else yamlConfig['log'], filemode='a',
+                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     logger = logging.getLogger(__name__)
 
     logger.debug('Load config: {}'.format(yamlConfig))
     manga = MangaDownloader(yamlConfig['sites'], DEFAULT_DOWNLOAD_DIR_PATH, defaultProxy=yamlConfig['proxy'])
     for url in INPUT_URLS:
-       infos = manga.getInfo(url)
-       for info in infos['episodes']:
+        infos = manga.getInfo(url)
+        for info in infos['episodes']:
             episode = info.copy()
             episode['title'] = infos['title']
             if IS_ALL:
@@ -124,4 +123,3 @@ if __name__ == '__main__':
         pass
     else:
         main()
-

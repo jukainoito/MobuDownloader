@@ -11,9 +11,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-
 class WebAce(MangaCrawler):
-
     domainUrl = 'https://web-ace.jp'
     xpath = {
         'title': '/html/head/title/text()',
@@ -22,7 +20,6 @@ class WebAce(MangaCrawler):
         'episode_title': 'div/div/p/text()',
         'cur_episode_title': '//*[@class="container-headerArea"]/span/text()'
     }
-
 
     def getEpisodeImages(self, url):
         url = url + '/json/'
@@ -62,7 +59,6 @@ class WebAce(MangaCrawler):
             await asyncio.gather(*tasks)
             self.pbar = None
 
-
     def getMangaInfo(self, url):
         if re.search('episode/+$', url) is None:
             url = url + '/episode/'
@@ -91,7 +87,6 @@ class WebAce(MangaCrawler):
             'title': title,
             'episodes': episodes
         }
-
 
     def getEpisodeInfo(self, url):
 

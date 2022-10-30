@@ -68,8 +68,8 @@ class MangaPoke(MangaCrawler):
         params = {
             'aggregate_id': series_id,
             'number_since': 250,
-            'number_until': -1,
-            'read_more_num': 250,
+            'number_until': 0,
+            'read_more_num': 150,
             'type': 'episode',
             'is_guest': 1
         }

@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class Cycomi(MangaCrawler):
-
     domainUrl = 'https://cycomi.com'
     xpath = {
         'title': '//*[@class="title-texts"]/h3/text()',
@@ -20,12 +19,10 @@ class Cycomi(MangaCrawler):
         'episode_title': 'div/p[1]/text()',
         'cur_episode_manga_title': '/html/body/header/p/a/text()',
         'cur_episode_title': '/html/body/header/p/text()',
-        'images': '//*[@class="image-container"]/img/@src'
+        'images': '//*[@class="swiper-wrapper"]/div/img/@src'
     }
 
-
     def getEpisodeInfo(self, url):
-
         r = self.webGet(url)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
@@ -63,8 +60,8 @@ class Cycomi(MangaCrawler):
             episodeUrl = ''.join(episode.xpath(self.xpath['episode_url']))
             episodes.append({'episode': episodeTitle,
                              'pageSize': '', 'raw': {
-                                 'url': self.domainUrl + episodeUrl
-                             }
+                    'url': self.domainUrl + episodeUrl
+                }
                              })
         return {
             'title': title,
@@ -76,7 +73,6 @@ class Cycomi(MangaCrawler):
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
         images = html.xpath(self.xpath['images'])
-
         return list(filter(lambda img: img.find('http') == 0, images))
 
     @staticmethod
@@ -99,11 +95,10 @@ class Cycomi(MangaCrawler):
         imageData = self.getEpisodeImages(info['raw']['url'])
         info['raw']['images'] = imageData
 
-
         with self.tqdm.tqdm(total=len(imageData), ncols=75, unit='page') as pbar:
             self.pbar = pbar
             tasks = []
-        # for i in self.tqdm.trange(len(imageData), ncols=75, unit='page'):
+            # for i in self.tqdm.trange(len(imageData), ncols=75, unit='page'):
             for i in range(len(imageData)):
                 imageUrl = imageData[i]
                 imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
@@ -111,7 +106,6 @@ class Cycomi(MangaCrawler):
                 tasks.append(task)
             await asyncio.gather(*tasks)
             self.pbar = None
-
 
     def getInfo(self, url):
         if url.find('title') > 0:

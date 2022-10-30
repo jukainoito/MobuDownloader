@@ -1,19 +1,15 @@
 # coding:utf-8
 
+import asyncio
 import json
-import os, sys
+import logging
+import os
+import sys
+from urllib.parse import urlparse
 
 from .sites import sites
 
-from urllib.parse import urlparse
-
-import logging
-
 logger = logging.getLogger(__name__)
-
-from tqdm import tqdm
-
-import asyncio
 
 
 class MangaDownloader(object):

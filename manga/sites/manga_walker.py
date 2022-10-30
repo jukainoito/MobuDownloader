@@ -1,8 +1,6 @@
 # coding:utf-8
 
 from .manga_crawler import MangaCrawler
-# from urllib.parse import urlparse
-# from urllib.parse import parse_qs
 from string import Template
 import re
 import json
