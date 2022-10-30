@@ -24,25 +24,26 @@ class AlifaPolis(MangaCrawler):
         'cur_images_data': '/html/body/script[3]/text()'
     }
 
-    def parseImages(self, jsContent):
-        target = (jsContent.split('var _pages = [];')[1]).split('var _max_page = _pages.length;')[0]
+    @staticmethod
+    def parse_images(js_content):
+        target = (js_content.split('var _pages = [];')[1]).split('var _max_page = _pages.length;')[0]
         regex = re.compile("http[^\"]*")
         return regex.findall(target)
 
-    def getEpisodeInfo(self, url):
-        r = self.webGet(url)
+    def get_episode_info(self, url):
+        r = self.web_get(url)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
 
         title = ''.join(html.xpath(self.xpath['cur_manga_title']))
 
-        episodeTitle = ''.join(html.xpath(self.xpath['cur_episode_title']))
-        jsContent = ''.join(html.xpath(self.xpath['cur_images_data']))
+        episode_title = ''.join(html.xpath(self.xpath['cur_episode_title']))
+        js_content = ''.join(html.xpath(self.xpath['cur_images_data']))
 
-        images = self.parseImages(jsContent)
+        images = self.parse_images(js_content)
 
         episodes = [{
-            'episode': episodeTitle,
+            'episode': episode_title,
             'pageSize': len(images),
             'raw': {
                 'url': url,
@@ -54,24 +55,24 @@ class AlifaPolis(MangaCrawler):
             'episodes': episodes
         }
 
-    def getMangaInfo(self, url):
-        r = self.webGet(url)
+    def get_manga_info(self, url):
+        r = self.web_get(url)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
 
         title = ''.join(html.xpath(self.xpath['title']))
         episodes = []
 
-        episodesEtree = html.xpath(self.xpath['episodes'])
-        for episode in episodesEtree:
-            episodeTitle = ''.join(episode.xpath(self.xpath['episode_title'])).strip()
-            episodeUrl = ''.join(episode.xpath(self.xpath['episode_url'])).strip()
-            if len(episodeUrl) == 0:
+        episodes_etree = html.xpath(self.xpath['episodes'])
+        for episode in episodes_etree:
+            episode_title = ''.join(episode.xpath(self.xpath['episode_title'])).strip()
+            episode_url = ''.join(episode.xpath(self.xpath['episode_url'])).strip()
+            if len(episode_url) == 0:
                 continue
             episodes.append({
-                'episode': episodeTitle,
+                'episode': episode_title,
                 'pageSize': '', 'raw': {
-                    'url': episodeUrl if episodeUrl.startswith('http') else self.domainUrl + episodeUrl
+                    'url': episode_url if episode_url.startswith('http') else self.domainUrl + episode_url
                 }
             })
         return {
@@ -79,33 +80,33 @@ class AlifaPolis(MangaCrawler):
             'episodes': episodes
         }
 
-    def getEpisodeImages(self, url):
-        r = self.webGet(url)
+    def get_episode_images(self, url):
+        r = self.web_get(url)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
-        jsContent = ''.join(html.xpath(self.xpath['cur_images_data']))
+        js_content = ''.join(html.xpath(self.xpath['cur_images_data']))
 
-        images = self.parseImages(jsContent)
+        images = self.parse_images(js_content)
 
         return images
 
     @staticmethod
-    def saveImage(savePath, data):
-        open(savePath, 'wb').write(data)
+    def save_image(save_path, data):
+        open(save_path, 'wb').write(data)
 
     @MangaCrawler.update_pbar
-    async def downloadImage(self, imageUrl, savePath):
-        if not os.path.exists(savePath):
-            logger.info('Dwonload image from: {} to : {}'.format(imageUrl, savePath))
+    async def download_image(self, image_url, save_path):
+        if not os.path.exists(save_path):
+            logger.info('Download image from: {} to : {}'.format(image_url, save_path))
 
-            image = self.webGet(imageUrl)
-            self.saveImage(savePath, image.content)
+            image = self.web_get(image_url)
+            self.save_image(save_path, image.content)
 
     async def download(self, info):
-        episodeDir = self.mkEpisodeDir(self.saveDir, info['title'], info['episode'])
+        episode_dir = self.mk_episode_dir(self.save_dir, info['title'], info['episode'])
 
         if 'images' not in info['raw'].keys():
-            images = self.getEpisodeImages(info['raw']['url'])
+            images = self.get_episode_images(info['raw']['url'])
             info['pageSize'] = len(images)
             info['raw']['images'] = images
         else:
@@ -116,24 +117,24 @@ class AlifaPolis(MangaCrawler):
             tasks = []
             # for i in self.tqdm.trange(len(images), ncols=75, unit='page'):
             for i in range(len(images)):
-                imageUrl = images[i]
-                imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
-                task = asyncio.ensure_future(self.downloadImage(imageUrl, imageSavePath))
+                image_url = images[i]
+                image_save_path = os.path.join(episode_dir, str(i + 1) + '.jpg')
+                task = asyncio.ensure_future(self.download_image(image_url, image_save_path))
                 tasks.append(task)
             await asyncio.gather(*tasks)
             self.pbar = None
 
-    def getInfo(self, url):
+    def get_info(self, url):
         episodes = None
         if re.match('^http.*/official/(\\d+)/(\\d+)/?$', url):
             logger.info('Type: Episode')
 
-            episodes = self.getEpisodeInfo(url)
+            episodes = self.get_episode_info(url)
             episodes['isEpisode'] = True
             episodes['episodes'][0]['isCurEpisode'] = True
         elif re.match('^http.*/official/(\\d+)/?$', url):
             logger.info('Type: Manga')
 
-            episodes = self.getMangaInfo(url)
+            episodes = self.get_manga_info(url)
             episodes['isEpisode'] = False
         return episodes

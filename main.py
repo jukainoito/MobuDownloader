@@ -38,73 +38,73 @@ if args.dir is not None:
 INPUT_URLS = args.urls
 
 
-def getValueOfDict(key, dictData):
-    if key in dictData:
-        return dictData[key]
+def get_value_of_dict(key, dict_data):
+    if key in dict_data:
+        return dict_data[key]
     else:
         return None
 
 
-def hasValueOfDict(key, dictData):
-    if key in dictData:
+def has_value_of_dict(key, dict_data):
+    if key in dict_data:
         return True
     else:
         return False
 
 
-def readConfigFromYAML(file):
+def read_config_from_yaml(file):
     if file is not None:
         with open(file) as f:
             try:
-                yamlConfig = yaml.safe_load(f)
-                globalProxy = getValueOfDict('proxy', yamlConfig)
-                if getValueOfDict('log', yamlConfig) is None:
-                    yamlConfig['log'] = DEFAULT_LOG_PATH
-                if 'sites' not in yamlConfig or yamlConfig['sites'] is None:
-                    yamlConfig['sites'] = dict()
+                yaml_config = yaml.safe_load(f)
+                global_proxy = get_value_of_dict('proxy', yaml_config)
+                if get_value_of_dict('log', yaml_config) is None:
+                    yaml_config['log'] = DEFAULT_LOG_PATH
+                if 'sites' not in yaml_config or yaml_config['sites'] is None:
+                    yaml_config['sites'] = dict()
                 for site in sites.keys():
-                    siteConfig = getValueOfDict(site, yamlConfig['sites'])
-                    if siteConfig is None:
-                        yamlConfig['sites'][site] = {
-                            'proxy': globalProxy,
+                    site_config = get_value_of_dict(site, yaml_config['sites'])
+                    if site_config is None:
+                        yaml_config['sites'][site] = {
+                            'proxy': global_proxy,
                             'cookies_file': None
                         }
                     else:
-                        if not hasValueOfDict('proxy', siteConfig):
-                            siteConfig['proxy'] = globalProxy
-                        if getValueOfDict('cookies_file', siteConfig) is None:
-                            siteConfig['cookies_file'] = None
-                return yamlConfig
-            except yaml.scanner.ScannerError as e:
+                        if not has_value_of_dict('proxy', site_config):
+                            site_config['proxy'] = global_proxy
+                        if get_value_of_dict('cookies_file', site_config) is None:
+                            site_config['cookies_file'] = None
+                return yaml_config
+            except yaml.scanner.ScannerError:
                 print('YAML file read error, using default')
-    yamlConfig = {
+    yaml_config = {
         'log': DEFAULT_LOG_PATH,
         'proxy': None,
         'sites': {}
     }
     for site in sites.keys():
-        yamlConfig['sites'][site] = {
+        yaml_config['sites'][site] = {
             'proxy': None,
             'cookies_file': None
         }
-    return yamlConfig
+    return yaml_config
 
 
 def main():
-    yamlConfig = readConfigFromYAML(YAML_CONFIG_PATH)
+    yaml_config = read_config_from_yaml(YAML_CONFIG_PATH)
 
     global logger
 
     logging.basicConfig(level=logging.DEBUG if IS_DEBUG else logging.INFO,
-                        filename=None if IS_DEBUG else yamlConfig['log'], filemode='a',
+                        filename=None if IS_DEBUG else yaml_config['log'], filemode='a',
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     logger = logging.getLogger(__name__)
 
-    logger.debug('Load config: {}'.format(yamlConfig))
-    manga = MangaDownloader(yamlConfig['sites'], DEFAULT_DOWNLOAD_DIR_PATH, defaultProxy=yamlConfig['proxy'])
+    logger.debug('Load config: {}'.format(yaml_config))
+    manga = MangaDownloader(yaml_config['sites'], DEFAULT_DOWNLOAD_DIR_PATH, default_proxy=yaml_config['proxy'])
     for url in INPUT_URLS:
-        infos = manga.getInfo(url)
+        infos = manga.get_info(url)
         for info in infos['episodes']:
             episode = info.copy()
             episode['title'] = infos['title']

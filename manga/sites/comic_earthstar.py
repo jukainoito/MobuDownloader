@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class ComicEarthStat(MangaCrawler):
     episodeInfoApiUrl = 'http://api.comic-earthstar.jp/c.php'
-    mangaPageUrl = 'https://www.comic-earthstar.jp/detail/'
+    mangaPageUrl = 'https://www.info_api_url.jp/detail/'
     xpath = {
         'title': '//*[@id="comic_info"]/div[1]/text()',
         'top_episode': '//*[@valign="top"]',
@@ -28,56 +28,56 @@ class ComicEarthStat(MangaCrawler):
 
     }
 
-    def getEpisodeStorageInfo(self, episodeUrl):
-        cid = parse.parse_qs(parse.urlparse(episodeUrl).query)['cid']
+    def get_episode_storage_info(self, episode_url):
+        cid = parse.parse_qs(parse.urlparse(episode_url).query)['cid']
         if len(cid) == 0:
             return None
         cid = cid[0]
-        infoApiUrl = self.episodeInfoApiUrl + '?cid=' + cid
-        r = self.webGet(infoApiUrl, scheme='https')
-        episodeInfo = r.json()
+        info_api_url = self.episodeInfoApiUrl + '?cid=' + cid
+        r = self.web_get(info_api_url, scheme='https')
+        episode_info = r.json()
 
-        return episodeInfo
+        return episode_info
 
-    def getEpisodeInfo(self, url):
+    def get_episode_info(self, url):
 
-        episodeInfo = self.getEpisodeStorageInfo(url)
-        if episodeInfo is None:
+        episode_info = self.get_episode_storage_info(url)
+        if episode_info is None:
             return None
 
-        nowEpisodeTitle = episodeInfo['cti']
+        now_episode_title = episode_info['cti']
 
-        mangaUrl = episodeInfo['url']
-        mangaIdent = re.search('data/([^/]*)/', mangaUrl).group(1)
-        mangaUrl = self.mangaPageUrl + mangaIdent + '/'
+        manga_url = episode_info['url']
+        manga_ident = re.search('data/([^/]*)/', manga_url).group(1)
+        manga_url = self.mangaPageUrl + manga_ident + '/'
 
-        episodes = self.getMangaInfo(mangaUrl, nowEpisodeTitle)
+        episodes = self.get_manga_info(manga_url, now_episode_title)
         return episodes
 
-    def getMangaInfo(self, url, nowEpisodeTitle=None):
+    def get_manga_info(self, url, now_episode_title=None):
 
-        pattern = re.compile(r'(http[s]?://(www.)comic-earthstar.jp/detail/[^/]*)/?.*')
-        findRes = pattern.findall(url)
-        if len(findRes) == 0:
+        pattern = re.compile(r'(http(s)?://(www.)comic-earthstar.jp/detail/[^/]*)/?.*')
+        find_res = pattern.findall(url)
+        if len(find_res) == 0:
             return
 
-        jsonUrl = findRes[0][0] + '.json'
-        jsonUrl = jsonUrl.replace('detail', 'json/contents/detail')
+        json_url = find_res[0][0] + '.json'
+        json_url = json_url.replace('detail', 'json/contents/detail')
 
-        r = self.webGet(jsonUrl, scheme='https')
+        r = self.web_get(json_url, scheme='https')
         r.encoding = 'utf-8'
-        mangaInfo = r.json()
-        title = mangaInfo['categorys']['comic_category_title']
+        manga_info = r.json()
+        title = manga_info['categorys']['comic_category_title']
 
         episodes = []
-        for episodeRaw in mangaInfo['episodes']:
+        for episode_raw in manga_info['episodes']:
             temp = {
-                'episode': episodeRaw['comic_episode_title'],
+                'episode': episode_raw['comic_episode_title'],
                 'pageSize': '',
-                'raw': episodeRaw
+                'raw': episode_raw
             }
             temp['raw']['url'] = temp['raw']['page_url']
-            if nowEpisodeTitle is not None and nowEpisodeTitle == temp['episode']:
+            if now_episode_title is not None and now_episode_title == temp['episode']:
                 temp['isCurEpisode'] = True
             episodes.append(temp)
 
@@ -86,76 +86,76 @@ class ComicEarthStat(MangaCrawler):
             'episodes': episodes
         }
 
-    def getEpisodeImages(self, url):
-        episodeStorageInfo = self.getEpisodeStorageInfo(url)
-        imagesApiUrl = episodeStorageInfo['url'] + 'configuration_pack.json'
+    def get_episode_images(self, url):
+        episode_storage_info = self.get_episode_storage_info(url)
+        images_api_url = episode_storage_info['url'] + 'configuration_pack.json'
 
-        r = self.webGet(imagesApiUrl, scheme='https')
-        imageData = r.json()
+        r = self.web_get(images_api_url, scheme='https')
+        image_data = r.json()
         return {
-            'episodeStorageInfoUrl': episodeStorageInfo['url'],
-            'data': imageData
+            'episodeStorageInfoUrl': episode_storage_info['url'],
+            'data': image_data
         }
 
-    def downloadImageData(self, url, savePath, a3fData):
-        r = self.webGet(url, scheme='https')
-        self.handleImage(r.content, savePath, a3fData)
+    def download_image_data(self, url, save_path, a3f_data):
+        r = self.web_get(url, scheme='https')
+        self.handle_image(r.content, save_path, a3f_data)
 
     @staticmethod
-    def handleImage(imgData, savePath, a3fData):
-        im = Image.open(Bytes2Data(imgData))
-        newIm = im.copy()
-        for data in a3fData:
-            imageArea = im.crop((data['destX'], data['destY'],
-                                 data['destX'] + data['width'],
-                                 data['destY'] + data['height']))
-            newIm.paste(imageArea, (data['srcX'], data['srcY']))
-        newIm.save(savePath)
+    def handle_image(img_data, save_path, a3f_data):
+        im = Image.open(Bytes2Data(img_data))
+        new_im = im.copy()
+        for data in a3f_data:
+            image_area = im.crop((data['destX'], data['destY'],
+                                  data['destX'] + data['width'],
+                                  data['destY'] + data['height']))
+            new_im.paste(image_area, (data['srcX'], data['srcY']))
+        new_im.save(save_path)
 
     @staticmethod
-    def genPattern(name):
+    def gen_pattern(name):
         a3h = 4
-        chSum = 0
+        ch_sum = 0
         for ch in name:
-            chSum = chSum + ord(ch)
-        return chSum % a3h + 1
+            ch_sum = ch_sum + ord(ch)
+        return ch_sum % a3h + 1
 
-    def genA3f(self, width, height, pattern):
-        baseWidth = 64
-        baseHeight = 64
-        return self.a3f(width, height, baseWidth, baseHeight, pattern)
+    def generate_a3f(self, width, height, pattern):
+        base_width = 64
+        base_height = 64
+        return self.a3f(width, height, base_width, base_height, pattern)
 
     @MangaCrawler.update_pbar
-    async def downloadImage(self, episodeStorageUrl, episodeDir, imageData):
-        savePath = os.path.join(episodeDir, str(imageData['index']) + '.jpg')
+    async def download_image(self, episode_storage_url, episode_dir, image_data):
+        save_path = os.path.join(episode_dir, str(image_data['index']) + '.jpg')
 
-        if os.path.exists(savePath):
+        if os.path.exists(save_path):
             return
 
-        no = imageData['extend']['FileLinkInfo']['PageLinkInfoList'][0]['Page']['No']
+        no = image_data['extend']['FileLinkInfo']['PageLinkInfoList'][0]['Page']['No']
         no = str(no)
-        imageUrl = episodeStorageUrl + imageData['original-file-path'] + '/' + no + '.jpeg'
+        image_url = episode_storage_url + image_data['original-file-path'] + '/' + no + '.jpeg'
 
-        logger.info('Dwonload image from: {} to : {}'.format(imageUrl, savePath))
+        logger.info('Download image from: {} to : {}'.format(image_url, save_path))
 
-        pageData = imageData['extend']['FileLinkInfo']['PageLinkInfoList'][0]['Page']
-        contentArea = pageData['ContentArea']
-        width = contentArea['Width'] + pageData['DummyWidth']
-        height = contentArea['Height'] + pageData['DummyHeight']
-        pattern = self.genPattern(imageData['original-file-path'] + '/' + no)
+        page_data = image_data['extend']['FileLinkInfo']['PageLinkInfoList'][0]['Page']
+        content_area = page_data['ContentArea']
+        width = content_area['Width'] + page_data['DummyWidth']
+        height = content_area['Height'] + page_data['DummyHeight']
+        pattern = self.gen_pattern(image_data['original-file-path'] + '/' + no)
 
-        a3fData = self.genA3f(width, height, pattern)
+        a3f_data = self.generate_a3f(width, height, pattern)
 
-        self.downloadImageData(imageUrl, savePath, a3fData)
+        self.download_image_data(image_url, save_path, a3f_data)
 
     async def download(self, info):
-        episodeDir = self.mkEpisodeDir(self.saveDir, info['title'], info['episode'])
-        imageData = self.getEpisodeImages(info['raw']['url'])
-        info['images'] = imageData['data']
-        info['pageSize'] = len(imageData['data']['configuration']['contents'])
+        episode_dir = self.mk_episode_dir(self.save_dir, info['title'], info['episode'])
+        image_data = self.get_episode_images(info['raw']['url'])
+        info['images'] = image_data['data']
+        info['pageSize'] = len(image_data['data']['configuration']['contents'])
 
-        episodeStorageUrl = imageData['episodeStorageInfoUrl']
-        images = imageData['data']
+        episode_storage_url = image_data['episodeStorageInfoUrl']
+        images = image_data['data']
 
         with self.tqdm.tqdm(total=len(images['configuration']['contents']), ncols=75, unit='page') as pbar:
             self.pbar = pbar
@@ -163,37 +163,37 @@ class ComicEarthStat(MangaCrawler):
             # for i in range(len(images['configuration']['contents'])):
             # image = images['configuration']['contents'][i]
             for image in images['configuration']['contents']:
-                extendData = images[image['original-file-path']]
-                image['extend'] = extendData
-                task = asyncio.ensure_future(self.downloadImage(episodeStorageUrl, episodeDir, image))
+                extend_data = images[image['original-file-path']]
+                image['extend'] = extend_data
+                task = asyncio.ensure_future(self.download_image(episode_storage_url, episode_dir, image))
                 tasks.append(task)
             await asyncio.gather(*tasks)
             self.pbar = None
 
-    def getInfo(self, url):
+    def get_info(self, url):
         if re.search('//(www.)?comic-earthstar.jp', url) is not None:
             logger.info('Type: Manga')
 
-            episodes = self.getMangaInfo(url)
+            episodes = self.get_manga_info(url)
             episodes['isEpisode'] = False
         else:
             logger.info('Type: Episode')
 
-            episodes = self.getEpisodeInfo(url)
+            episodes = self.get_episode_info(url)
             episodes['isEpisode'] = True
         return episodes
 
     # From http://viewer.comic-earthstar.jp/js/viewer_1.0.1_2017-01-16.js
     @staticmethod
-    def calcPositionWithRest_(a, f, b, e):
+    def calc_position_with_rest_(a, f, b, e):
         return a * e + (b if a >= f else 0)
 
     @staticmethod
-    def calcXCoordinateXRest_(a, f, b):
+    def calc_x_coordinate_x_rest_(a, f, b):
         return (a + 61 * b) % f
 
     @staticmethod
-    def calcYCoordinateXRest_(a, f, b, e, d):
+    def calc_y_coordinate_x_rest_(a, f, b, e, d):
         c = (1 == d % 2)
         if c if a < f else not c:
             e = b
@@ -204,7 +204,7 @@ class ComicEarthStat(MangaCrawler):
         return (a + 53 * d + 59 * b) % e + f
 
     @staticmethod
-    def calcXCoordinateYRest_(a, f, b, e, d):
+    def calc_x_coordinate_y_rest_(a, f, b, e, d):
         c = (1 == d % 2)
         if c if a < b else not c:
             e = e - f
@@ -215,10 +215,11 @@ class ComicEarthStat(MangaCrawler):
         return (a + 67 * d + f + 71) % e + b
 
     @staticmethod
-    def calcYCoordinateYRest_(a, f, b):
+    def calc_y_coordinate_y_rest_(a, f, b):
         return (a + 73 * b) % f
 
-    def a3f(self, a, f, b, e, d):
+    @staticmethod
+    def a3f(a, f, b, e, d):
         c = math.floor(a / b)
         g = math.floor(f / e)
         a %= b
@@ -244,11 +245,12 @@ class ComicEarthStat(MangaCrawler):
 
         if 0 < f:
             for t in range(c):
-                p = self.calcXCoordinateXRest_(t, c, d)
-                k = self.calcYCoordinateXRest_(p, h, l, g, d)
-                p = self.calcPositionWithRest_(p, h, a, b)
+
+                p = ComicEarthStat.calc_x_coordinate_x_rest_(t, c, d)
+                k = ComicEarthStat.calc_y_coordinate_x_rest_(p, h, l, g, d)
+                p = ComicEarthStat.calc_position_with_rest_(p, h, a, b)
                 r = k * e
-                k = self.calcPositionWithRest_(t, h, a, b)
+                k = ComicEarthStat.calc_position_with_rest_(t, h, a, b)
                 m = l * e
                 v.append({
                     'srcX': k,
@@ -260,12 +262,12 @@ class ComicEarthStat(MangaCrawler):
                 })
         if 0 < a:
             for q in range(g):
-                k = self.calcYCoordinateYRest_(q, g, d)
-                p = self.calcXCoordinateYRest_(k, h, l, c, d)
+                k = ComicEarthStat.calc_y_coordinate_y_rest_(q, g, d)
+                p = ComicEarthStat.calc_x_coordinate_y_rest_(k, h, l, c, d)
                 p *= b
-                r = self.calcPositionWithRest_(k, l, f, e)
+                r = ComicEarthStat.calc_position_with_rest_(k, l, f, e)
                 k = h * b
-                m = self.calcPositionWithRest_(q, l, f, e)
+                m = ComicEarthStat.calc_position_with_rest_(q, l, f, e)
                 v.append({
                     'srcX': k,
                     'srcY': m,
@@ -279,8 +281,8 @@ class ComicEarthStat(MangaCrawler):
             for q in range(g):
                 p = (t + 29 * d + 31 * q) % c
                 k = (q + 37 * d + 41 * p) % g
-                r = (a if p >= self.calcXCoordinateYRest_(k, h, l, c, d) else 0)
-                m = (f if k >= self.calcYCoordinateXRest_(p, h, l, g, d) else 0)
+                r = (a if p >= ComicEarthStat.calc_x_coordinate_y_rest_(k, h, l, c, d) else 0)
+                m = (f if k >= ComicEarthStat.calc_y_coordinate_x_rest_(p, h, l, g, d) else 0)
                 p = p * b + r
                 r = k * e + m
                 k = t * b + (a if (t >= h) else 0)

@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 
 
 class MangaPoke(MangaCrawler):
-
     xpath = {
         'title': '//*[@class="series-header-title"]/text()',
         'series_id': '//*[@class="js-valve"]/@data-giga_series',
@@ -33,19 +32,19 @@ class MangaPoke(MangaCrawler):
 
     EPISODES_URL = 'https://pocket.shonenmagazine.com/api/viewer/readable_products'
 
-    def getInfo(self, url):
-        page = self.webGet(url)
+    def get_info(self, url):
+        page = self.web_get(url)
         page.encoding = 'utf-8'
         html = etree.HTML(page.text)
 
         episode_title = ''.join(html.xpath(self.xpath['cur_episode']['title']))
-        episode_id = self.getEpisodeId(url)
-        series_id = self.getSeriesId(url, html)
+        episode_id = self.get_episode_id(url)
+        series_id = self.get_series_id(url, html)
         return {
             'isEpisode': True,
             'title': ''.join(html.xpath(self.xpath['title'])),
             'seriesId': series_id,
-            'episodes': self.getEpisodes(url, series_id, curEpisode={
+            'episodes': self.get_episodes(url, series_id, cur_episode={
                 'title': episode_title,
                 'id': episode_id,
                 'url': url,
@@ -53,66 +52,72 @@ class MangaPoke(MangaCrawler):
             })
         }
 
-    def getEpisodeId(self, url):
+    @staticmethod
+    def get_episode_id(url):
         return re.search("\\d*$", url).group(0)
 
-    def getSeriesId(self, url, html=None):
+    def get_series_id(self, url, html=None):
         if html is None:
-            page = self.webGet(url)
+            page = self.web_get(url)
             page.encoding = 'utf-8'
             html = etree.HTML(page.text)
         return ''.join(html.xpath(self.xpath['series_id']))
 
-    def getEpisodes(self, url, series_id, curEpisode=None):
+    def get_episodes(self, url, series_id, cur_episode=None):
         episodes = []
         params = {
             'aggregate_id': series_id,
             'number_since': 250,
-            'number_until': 0,
+            'number_until': -1,
             'read_more_num': 150,
             'type': 'episode',
             'is_guest': 1
         }
-        r = self.webGet(self.EPISODES_URL, params=params)
-        html = r.json()['html']
-        html = etree.HTML(html)
-        free_episodes = html.xpath('//*[@class="test-readable-product-is-free series-episode-list-is-free"]/../..')
-        for episode in free_episodes:
-            episoodeUrl = ''.join(episode.xpath('@href'))
-            title = ''.join(episode.xpath('./div[2]/h4/text()'))
-            episodeInfo = {
-                'episode': title,
-                'pageSize': '',
-                'raw': {
-                    'url': episoodeUrl
+        r = self.web_get(self.EPISODES_URL, params=params)
+        while True:
+            html = r.json()['html']
+            next_url = r.json()['nextUrl']
+            html = etree.HTML(html)
+            free_episodes = html.xpath('//*[@class="test-readable-product-is-free series-episode-list-is-free"]/../..')
+            for episode in free_episodes:
+                episode_url = ''.join(episode.xpath('@href'))
+                title = ''.join(episode.xpath('./div[2]/h4/text()'))
+                episode_info = {
+                    'episode': title,
+                    'pageSize': '',
+                    'raw': {
+                        'url': episode_url
+                    }
                 }
-            }
-            if curEpisode is not None and title == curEpisode['title']:
-                episodeInfo['isCurEpisode'] = True
-                episodeInfo['raw']['url'] = url
-            episodes.append(episodeInfo)
+                if cur_episode is not None and title == cur_episode['title']:
+                    episode_info['isCurEpisode'] = True
+                    episode_info['raw']['url'] = url
+                episodes.append(episode_info)
+            if next_url.find('number_since=1&number_until=-1') < 0:
+                r = self.web_get(next_url)
+            else:
+                break
         return episodes
 
-
-    def getEpisodeImages(self, url):
-        page = self.webGet(url+'.json')
+    def get_episode_images(self, url):
+        page = self.web_get(url + '.json')
         page.encoding = 'utf-8'
         data = page.json()
-        imageData = data['readableProduct']['pageStructure']['pages']
-        return list(filter(lambda image: 'src' in image.keys(), imageData))
+        image_data = data['readableProduct']['pageStructure']['pages']
+        return list(filter(lambda image: 'src' in image.keys(), image_data))
 
     @MangaCrawler.update_pbar
-    async def downloadImage(self, url, savePath):
-        if os.path.exists(savePath):
+    async def download_image(self, url, save_path):
+        if os.path.exists(save_path):
             return
-        logger.info('Dwonload image from: {} to: {}'.format(url, savePath))
+        logger.info('Download image from: {} to: {}'.format(url, save_path))
 
-        r = self.webGet(url)
-        logger.debug('Start handle image: {}'.format(savePath))
-        self.handleImage(r.content, savePath)
+        r = self.web_get(url)
+        logger.debug('Start handle image: {}'.format(save_path))
+        self.handle_image(r.content, save_path)
 
     @staticmethod
-    def handleImage(img_data, save_name):
+    def handle_image(img_data, save_name):
         im = Image.open(Bytes2Data(img_data))
         ims = list()
         w_step = int(im.width / 4)
@@ -142,16 +147,15 @@ class MangaPoke(MangaCrawler):
                     start = (start_x, start[1])
         im.save(save_name)
 
-
-    def getDownloadEpisodeData(self, info):
-        images = self.getEpisodeImages(info['raw']['url'])
+    def get_download_episode_data(self, info):
+        images = self.get_episode_images(info['raw']['url'])
         info['pageSize'] = len(images)
         info['raw']['images'] = images
         return info
 
     async def download(self, info):
-        episodeDir = self.mkEpisodeDir(self.saveDir, info['title'], info['episode'])
-        info = self.getDownloadEpisodeData(info)
+        episode_dir = self.mk_episode_dir(self.save_dir, info['title'], info['episode'])
+        info = self.get_download_episode_data(info)
 
         # for i in self.tqdm.trange(len(info['raw']['images']), ncols=75, unit='page'):
         with self.tqdm.tqdm(total=len(info['raw']['images']), ncols=75, unit='page') as pbar:
@@ -159,9 +163,8 @@ class MangaPoke(MangaCrawler):
             tasks = []
             for i, image in enumerate(info['raw']['images']):
                 image = info['raw']['images'][i]
-                imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
-                task = asyncio.ensure_future(self.downloadImage(image['src'], imageSavePath))
+                image_save_path = os.path.join(episode_dir, str(i + 1) + '.jpg')
+                task = asyncio.ensure_future(self.download_image(image['src'], image_save_path))
                 tasks.append(task)
             await asyncio.gather(*tasks)
             self.pbar = None
-

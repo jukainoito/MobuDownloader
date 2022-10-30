@@ -22,5 +22,6 @@ sites = {
     'www.alphapolis.co.jp': AlifaPolis
 }
 
-def isSupportSite(site):
+
+def is_support_site(site):
     return site in sites.keys()

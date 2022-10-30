@@ -21,49 +21,49 @@ class WebAce(MangaCrawler):
         'cur_episode_title': '//*[@class="container-headerArea"]/span/text()'
     }
 
-    def getEpisodeImages(self, url):
+    def get_episode_images(self, url):
         url = url + '/json/'
-        r = self.webGet(url)
+        r = self.web_get(url)
         images = r.json()
 
         return list(map(lambda img: self.domainUrl + img, images))
 
     @staticmethod
-    def saveImage(savePath, data):
-        open(savePath, 'wb').write(data)
+    def save_image(save_path, data):
+        open(save_path, 'wb').write(data)
 
     @MangaCrawler.update_pbar
-    async def downloadImage(self, imageUrl, savePath):
-        if os.path.exists(savePath):
+    async def download_image(self, image_url, save_path):
+        if os.path.exists(save_path):
             return
 
-        logger.info('Dwonload image from: {} to : {}'.format(imageUrl, savePath))
+        logger.info('Download image from: {} to : {}'.format(image_url, save_path))
 
-        image = self.webGet(imageUrl)
-        self.saveImage(savePath, image.content)
+        image = self.web_get(image_url)
+        self.save_image(save_path, image.content)
 
     async def download(self, info):
-        episodeDir = self.mkEpisodeDir(self.saveDir, info['title'], info['episode'])
-        imageData = self.getEpisodeImages(info['raw']['url'])
-        info['raw']['images'] = imageData
+        episode_dir = self.mk_episode_dir(self.save_dir, info['title'], info['episode'])
+        image_data = self.get_episode_images(info['raw']['url'])
+        info['raw']['images'] = image_data
 
         # for i in self.tqdm.trange(len(imageData), ncols=75, unit='page'):
-        with self.tqdm.tqdm(total=len(imageData), ncols=75, unit='page') as pbar:
+        with self.tqdm.tqdm(total=len(image_data), ncols=75, unit='page') as pbar:
             self.pbar = pbar
             tasks = []
-            for i in range(len(imageData)):
-                imageUrl = imageData[i]
-                imageSavePath = os.path.join(episodeDir, str(i + 1) + '.jpg')
-                task = asyncio.ensure_future(self.downloadImage(imageUrl, imageSavePath))
+            for i in range(len(image_data)):
+                image_url = image_data[i]
+                image_save_path = os.path.join(episode_dir, str(i + 1) + '.jpg')
+                task = asyncio.ensure_future(self.download_image(image_url, image_save_path))
                 tasks.append(task)
             await asyncio.gather(*tasks)
             self.pbar = None
 
-    def getMangaInfo(self, url):
+    def get_manga_info(self, url):
         if re.search('episode/+$', url) is None:
             url = url + '/episode/'
 
-        r = self.webGet(url)
+        r = self.web_get(url)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
 
@@ -71,16 +71,16 @@ class WebAce(MangaCrawler):
         title = re.search('「(.*)」', title).group(1)
         episodes = []
 
-        episodesEtree = html.xpath(self.xpath['episodes'])
-        for episode in episodesEtree:
-            episodeTitle = ''.join(episode.xpath(self.xpath['episode_title']))
-            if len(episodeTitle) == 0:
+        episodes_etree = html.xpath(self.xpath['episodes'])
+        for episode in episodes_etree:
+            episode_title = ''.join(episode.xpath(self.xpath['episode_title']))
+            if len(episode_title) == 0:
                 continue
-            episodeUrl = ''.join(episode.xpath(self.xpath['episode_url']))
+            episode_url = ''.join(episode.xpath(self.xpath['episode_url']))
             episodes.append({
-                'episode': episodeTitle,
+                'episode': episode_title,
                 'pageSize': '', 'raw': {
-                    'url': self.domainUrl + episodeUrl
+                    'url': self.domainUrl + episode_url
                 }
             })
         return {
@@ -88,9 +88,9 @@ class WebAce(MangaCrawler):
             'episodes': episodes
         }
 
-    def getEpisodeInfo(self, url):
+    def get_episode_info(self, url):
 
-        r = self.webGet(url)
+        r = self.web_get(url)
         r.encoding = 'utf-8'
         html = etree.HTML(r.text)
 
@@ -111,16 +111,16 @@ class WebAce(MangaCrawler):
             'episodes': episodes
         }
 
-    def getInfo(self, url):
+    def get_info(self, url):
         if re.search('/+episode/+\\d+/*$', url) is None:
             logger.info('Type: Manga')
 
-            episodes = self.getMangaInfo(url)
+            episodes = self.get_manga_info(url)
             episodes['isEpisode'] = False
         else:
             logger.info('Type: Episode')
 
-            episodes = self.getEpisodeInfo(url)
+            episodes = self.get_episode_info(url)
             episodes['isEpisode'] = True
             episodes['episodes'][0]['isCurEpisode'] = True
         return episodes

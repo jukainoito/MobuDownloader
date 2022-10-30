@@ -28,12 +28,12 @@ class MangaCrawler:
     session.mount('http://', adapter)
     session.mount('https://', adapter)
 
-    def __init__(self, saveDir='.', cookies=None, proxy=None, tqdmObj=None):
-        self.saveDir = saveDir
+    def __init__(self, save_dir='.', cookies=None, proxy=None, tqdm_obj=None):
+        self.save_dir = save_dir
         self.cookies = cookies
         self.proxy = proxy
-        if tqdmObj is not None:
-            self.tqdm = tqdmObj
+        if tqdm_obj is not None:
+            self.tqdm = tqdm_obj
         else:
             self.tqdm = tqdm
         if self.proxy is not None:
@@ -45,39 +45,39 @@ class MangaCrawler:
             self.proxies = None
 
     @abstractmethod
-    def getInfo(self, url):
+    def get_info(self, url):
         pass
 
     @abstractmethod
     async def download(self, info):
         pass
 
-
     @staticmethod
     def update_pbar(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            selfObj = args[0]
+            self_obj = args[0]
             result = await func(*args, **kwargs)
-            if selfObj.pbar is not None:
-                selfObj.pbar.update()
+            if self_obj.pbar is not None:
+                self_obj.pbar.update()
             return result
+
         return wrapper
 
-    def webGet(self, url, params=None, scheme=None):
+    def web_get(self, url, params=None, scheme=None):
         if scheme is not None:
-            urlParse = parse.urlparse(url)
-            if len(urlParse.scheme) == 0:
-                url = parse.urlunparse(urlParse._replace(scheme='https'))
-        return self.session.get(url, params=params, headers=self.headers, cookies=self.cookies, proxies=self.proxies, verify=False)
-
+            url_parse = parse.urlparse(url)
+            if len(url_parse.scheme) == 0:
+                url = parse.urlunparse(url_parse._replace(scheme='https'))
+        return self.session.get(url, params=params, headers=self.headers, cookies=self.cookies, proxies=self.proxies,
+                                verify=False)
 
     @staticmethod
-    def mkEpisodeDir(saveDir, title, episodeTitle):
+    def mk_episode_dir(save_dir, title, episode_title):
         rstr = r"[\/\\\:\*\?\"\<\>\|]"
-        newTitle = re.sub(rstr, '_', episodeTitle)
-        episodeDir = os.path.join(saveDir, title, newTitle)
-        if os.path.exists(os.path.normpath(episodeDir)):
-            return episodeDir
-        os.makedirs(os.path.normpath(episodeDir))
-        return episodeDir
+        new_title = re.sub(rstr, '_', episode_title)
+        episode_dir = os.path.join(save_dir, title, new_title)
+        if os.path.exists(os.path.normpath(episode_dir)):
+            return episode_dir
+        os.makedirs(os.path.normpath(episode_dir))
+        return episode_dir
